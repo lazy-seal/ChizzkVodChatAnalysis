@@ -1,0 +1,31 @@
+result of : url = f"https://api.chzzk.naver.com/service/v1/videos/{videoNo}/chats?playerMessageTime={vodTimestamp}&previousVideoChatSize=50"
+
+code
+message
+content
+  nextPlayerMessageTime
+  previousVideoChats
+    [list]
+      chatChannelId
+      messageTime
+      userIdHash
+      content
+      extras
+      messageTypeCode
+      messageStatusType
+      profile
+      playerMessageTime
+  videoChats
+    [list]
+      chatChannelId
+      messageTime
+      userIdHash
+      content
+      extras                  #  이거 str임 -> json 포맷임
+      messageTypeCode         #  이거 메세지 타입을 알려줌 {1:일반 채팅, 10:도네이션, 11:구독, 12:선물(구독권 등), 30: 시스템 메세지}
+      messageStatusType
+      profile                 #  이거 str임 -> json 포맷임
+      playerMessageTime
+
+
+  
