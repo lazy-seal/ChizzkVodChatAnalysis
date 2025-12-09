@@ -15,9 +15,9 @@ with open("Private//private.json", encoding="utf-8") as f:
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
 
-def streamer_lists_update():
-    """updates the streamer info based on the channel (mainly updates follower count, channel name)
-    Might use this later on
+async def streamer_lists_update(client: httpx.AsyncClient):
+    """
+    Updates the streamer info based on their channel id up to date
     """
     with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f1:
         csv_reader = csv.DictReader(f1)
@@ -26,16 +26,28 @@ def streamer_lists_update():
             csv_writer.writeheader()
             for row in csv_reader:
                 url         = f"https://api.chzzk.naver.com/service/v1/channels/{row["streamer_channel_id"]}"
-                res         = requests.get(url=url, headers=HEADERS).json()
+                res         = await client.get(url=url, headers=HEADERS)
+                res_json    = res.json()
                 to_write    = {
-                    "streamer_channel_name"         : res['content']['channelName'],
-                    "streamer_channel_id"           : res['content']['channelId'],
-                    "streamer_follower_count"       : res['content']['followerCount'],
-                    "streamer_channel_image_url"    : res['content']['channelImageUrl']
+                    "streamer_channel_name"         : res_json['content']['channelName'],
+                    "streamer_channel_id"           : res_json['content']['channelId'],
+                    "streamer_follower_count"       : res_json['content']['followerCount'],
+                    "streamer_channel_image_url"    : res_json['content']['channelImageUrl']
                 }
                 csv_writer.writerow(to_write)
     logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, \
         delete streamers.csv and change updated file's name to streamers.csv\n\n")
+
+async def update_user_info(client: httpx.AsyncClient, user_id: str, is_streamer: bool = False):
+    """
+    Updates given user's information in users.csv file
+    @TODO: add list of attributes that might get updated by this function
+    """
+    raise NotImplementedError
+
+async def load_user_info(client: httpx.AsyncClient, user_id: str) -> UserInfo:
+    """Makes asyncronuous http call to Chzzk api to get user data based on their id"""
+    raise NotImplementedError
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
     """Performs a api call to loads and returns a list of vod replay information of the streamer.

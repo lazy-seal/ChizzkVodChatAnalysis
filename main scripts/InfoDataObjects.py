@@ -91,7 +91,13 @@ class UserInfo(NamedTuple):
     user_channel_type: str  # "STREAMING" or "NORMAL", plus maybe something else I haven't seen
     
     def get_dict(self):
-        raise NotImplementedError
+        return {
+            "user_channel_id": self.user_channel_id,
+            "user_nickname": self.user_nickname,
+            "user_follower_count": self.user_follower_count,
+            "user_different_names": self.user_different_names,
+            "user_channel_type": self.user_channel_type
+        }
     
     
 if __name__ == "__main__":
