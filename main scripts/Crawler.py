@@ -17,7 +17,7 @@ logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO
 
 def streamer_lists_update():
     """updates the streamer info based on the channel (mainly updates follower count, channel name)
-    Might use this later on to 
+    Might use this later on
     """
     with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f1:
         csv_reader = csv.DictReader(f1)
@@ -34,13 +34,15 @@ def streamer_lists_update():
                     "streamer_channel_image_url"    : res['content']['channelImageUrl']
                 }
                 csv_writer.writerow(to_write)
-    logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, delete streamers.csv and change updated file's name to streamers.csv\n\n")
-    
+    logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, \
+        delete streamers.csv and change updated file's name to streamers.csv\n\n")
+
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
     """Performs a api call to loads and returns a list of vod replay information of the streamer.
     
     Parameters:
-        n_videos_to_load (int) : number of video information you want to request. Maximum is 50 (enforced with ValueError). The api gives no response if greater than 50.
+        n_videos_to_load (int) : number of video information you want to request. \
+            Maximum is 50 (enforced with ValueError). The api gives no response if greater than 50.
         
     Returns:
         vods (list[VideoInfo])
@@ -74,11 +76,12 @@ async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_cha
     return vods
 
 async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_time: int) -> list[ChatInfo]:
-    """ Performs an api request to chzzk web api, returns results of the request
+    """Performs an api request to chzzk web api, returns results of the request
     
     Parameters:
         video_number (int): video identification number unique to each replay.
-        message_time (int): A timestamp within the video in which the api call will request chats. Ex.: given 0, the function requests chats from the beginning of the video
+        message_time (int): A timestamp within the video in which the api call will request chats. 
+            Ex.: given 0, the function requests chats from the beginning of the video
     
     Returns:
         chats (list[ChatInfo]): is a list of ChatInfo objects
@@ -87,7 +90,8 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
         "https://api.chzzk.naver.com/service/v1/videos/{video_number}/chats?playerMessageTime={next_player_message_time}"
         
     Extra Note:
-        Logger will give you warning when unkown messageTypeCode is encountered. Current Known messageTypes are:
+        Logger will give you warning when unkown messageTypeCode is encountered. 
+        Current Known messageTypes are:
             1: regular chat
             10: donation
             11: Subscription
@@ -174,11 +178,6 @@ if __name__ == "__main__":
     with open("TEST\\TEST.csv", "w", newline="", encoding="utf-8") as f:
         csv_writer = csv.DictWriter(f, fieldnames=CHATS_CSV_HEADER)
         csv_writer.writeheader()
-    # @TODO Database Related
-        # @TODO write a pipeline code from api fetch -> database:
-            # @TODO read that csv file and put them into the db (look at csv lib doc)
-    
-    # https://api.chzzk.naver.com/service/v1/channels/54fa74e108df790f329127ddf1f11318 gives me user info (user hash id or chennelID on the last section)
     
     # what if the user in 1 stream appear in another stream? how do I get
     # index on the user name 

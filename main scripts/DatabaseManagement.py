@@ -44,4 +44,7 @@ if __name__ == "__main__":
     
     chatdb.endSession()
     
+    # @TODO Database Related
+        # @TODO write a pipeline code from api fetch -> database:
+            # @TODO read that csv file and put them into the db (look at csv lib doc)
     
