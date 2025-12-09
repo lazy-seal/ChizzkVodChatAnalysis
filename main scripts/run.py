@@ -1,4 +1,4 @@
-from Crawler import streamer_lists_update, logger, load_video_info, load_chat_data, save_vod_chats_to_csv, save_video_info_to_csv
+from Crawler import update_streamers_csv, logger, load_video_info, load_chat_data, save_vod_chats_to_csv, save_video_info_to_csv
 from DatabaseManagement import dbObject
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
 

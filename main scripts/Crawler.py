@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 from pprint import pprint
 import httpx
+import pandas as pd
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER
 
 with open("Private//private.json", encoding="utf-8") as f:
@@ -14,37 +15,50 @@ with open("Private//private.json", encoding="utf-8") as f:
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
 
-async def streamer_lists_update(client: httpx.AsyncClient):
-    """Updates the streamer info based on their channel id up to date"""
-    with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f1:
-        csv_reader = csv.DictReader(f1)
-        with open(f"Raw Data\\streamers_updated.csv", "w", newline="", encoding="utf-8") as f2:
-            csv_writer = csv.DictWriter(f2, STREAMERS_CSV_HEADER)
-            csv_writer.writeheader()
-            for row in csv_reader:
-                url         = f"https://api.chzzk.naver.com/service/v1/channels/{row["streamer_channel_id"]}"
-                res         = await client.get(url=url, headers=HEADERS)
-                res_json    = res.json()
-                to_write    = {
-                    "streamer_channel_name"         : res_json['content']['channelName'],
-                    "streamer_channel_id"           : res_json['content']['channelId'],
-                    "streamer_follower_count"       : res_json['content']['followerCount'],
-                    "streamer_channel_image_url"    : res_json['content']['channelImageUrl']
-                }
-                csv_writer.writerow(to_write)
-    logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, \
-        delete streamers.csv and change updated file's name to streamers.csv\n\n")
+async def update_streamers_csv(client: httpx.AsyncClient):
+    """Updates the streamer info based on their channel id up to date in both streamers.csv and users.csv"""
+    raise NotImplementedError   # change the implementation to use pd
+    # with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f1:
+    #     csv_reader = csv.DictReader(f1)
+    #     with open(f"Raw Data\\streamers_updated.csv", "w", newline="", encoding="utf-8") as f2:
+    #         csv_writer = csv.DictWriter(f2, STREAMERS_CSV_HEADER)
+    #         csv_writer.writeheader()
+    #         for row in csv_reader:
+    #             url         = f"https://api.chzzk.naver.com/service/v1/channels/{row["streamer_channel_id"]}"
+    #             res         = await client.get(url=url, headers=HEADERS)
+    #             res_json    = res.json()
+    #             to_write    = {
+    #                 "streamer_channel_name"         : res_json['content']['channelName'],
+    #                 "streamer_channel_id"           : res_json['content']['channelId'],
+    #                 "streamer_follower_count"       : res_json['content']['followerCount'],
+    #                 "streamer_channel_image_url"    : res_json['content']['channelImageUrl']
+    #             }
+    #             csv_writer.writerow(to_write)
+    # logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, \
+    #     delete streamers.csv and change updated file's name to streamers.csv\n\n")
 
-async def update_user_info(client: httpx.AsyncClient, user_channel_id: str, is_streamer: bool = False):
+async def update_user_csv(client: httpx.AsyncClient, str):
     """
-    Updates given user's information in users.csv file
-    @TODO: add list of attributes that might get updated by this function
+    Updates given user's information in users.csv. 
+    If a user is streamer, they'll get updated on streamer.csv file too
+    This function is 'superset' of update_streamers.
+        
+    @TODO: add list of attributes that might get updated by this function (followers, different names (when they change names), etc)
+    @TODO: this function should utilize load_user_info function
     """
     raise NotImplementedError
 
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
     """Makes asyncronuous http call to Chzzk api to get user data based on their channel id"""
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
+    res         = await client.get(url=url, headers=HEADERS)
+    res_json    = res.json()
+    to_write    = {
+        "streamer_channel_name"         : res_json['content']['channelName'],
+        "streamer_channel_id"           : res_json['content']['channelId'],
+        "streamer_follower_count"       : res_json['content']['followerCount'],
+        "streamer_channel_image_url"    : res_json['content']['channelImageUrl']
+    }
     raise NotImplementedError
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
