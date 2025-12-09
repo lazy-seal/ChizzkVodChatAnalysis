@@ -5,7 +5,7 @@ from pathlib import Path
 import logging
 from pprint import pprint
 import httpx
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
+from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER
 
 with open("Private//private.json", encoding="utf-8") as f:
         private_file = json.load(f)
@@ -22,18 +22,17 @@ def streamer_lists_update():
     with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f1:
         csv_reader = csv.DictReader(f1)
         with open(f"Raw Data\\streamers_updated.csv", "w", newline="", encoding="utf-8") as f2:
-            csv_writer = csv.DictWriter(f2, ["streamer_channel_name",
-                                             "streamer_channel_id",
-                                             "streamer_follower_count",
-                                             "streamer_channel_image_url"])
+            csv_writer = csv.DictWriter(f2, STREAMERS_CSV_HEADER)
             csv_writer.writeheader()
             for row in csv_reader:
                 url         = f"https://api.chzzk.naver.com/service/v1/channels/{row["streamer_channel_id"]}"
                 res         = requests.get(url=url, headers=HEADERS).json()
-                to_write    = {"streamer_channel_name":res['content']['channelName'],
-                                "streamer_channel_id":res['content']['channelId'],
-                                "streamer_follower_count":res['content']['followerCount'],
-                                "streamer_channel_image_url":res['content']['channelImageUrl']}
+                to_write    = {
+                    "streamer_channel_name"         : res['content']['channelName'],
+                    "streamer_channel_id"           : res['content']['channelId'],
+                    "streamer_follower_count"       : res['content']['followerCount'],
+                    "streamer_channel_image_url"    : res['content']['channelImageUrl']
+                }
                 csv_writer.writerow(to_write)
     logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, delete streamers.csv and change updated file's name to streamers.csv\n\n")
     
@@ -107,7 +106,7 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
 
     for chat in res_json['content']['videoChats']:
         try:
-            ### Raw json handling starts
+            ### -------- Raw json handling starts -------- ###
             extras  = "" if not chat['extras'] else json.loads(chat['extras'])    # contains extra infos of the chat such as donation amount, gift type, emotes(url of image), etc
             profile = "" if not chat['profile'] else json.loads(chat['profile'])  # this is Null/None if user is anonymous
 
@@ -126,7 +125,7 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
                 logger.warning("Unkown messageTypeCode encountered: %d", chat['messageTypeCode'])
                 for k, v in chat.items():
                     logger.info("%s: %s", k, v)
-            ### Raw json handling ends
+            ### -------- Raw json handling ends -------- ###
 
             chat_info = ChatInfo(chat_user_nickname     = chat_user_nickname,
                                 chat_user_channel_id    = chat_user_channel_id,
@@ -145,87 +144,36 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
     return chats
 
 def save_video_info_to_csv(video_info: VideoInfo):
-    """Saves specific loaded vods on csv file.
-    
-    The created csv file will contain:
-            "video_streamer_name",
-            "video_streamer_channel_id",
-            "video_number",
-            "video_title",
-            "video_duration",
-            "video_tags",
-            "video_category_type",
-            "video_category",
-            "video_publish_date"
-    """
-    # @TODO/IDK check if vod file is initialized? idk Otherwize initialize file and write header
-    # @TODO FIX TYPO on video_catego"t"y_type to "r"
+    """Saves specific loaded vods on csv file."""
     video_csv_path = Path("Raw Data\\videos.csv")
     
     if not video_csv_path.exists():
         with open(video_csv_path, "w", newline="", encoding="utf-8") as f:
-            csv_writer = csv.DictWriter(f, fieldnames=["video_streamer_name",
-                                                        "video_streamer_channel_id",
-                                                        "video_number",
-                                                        "video_title",
-                                                        "video_duration",
-                                                        "video_tags",
-                                                        "video_category_type",
-                                                        "video_category",
-                                                        "video_publish_date"])
+            csv_writer = csv.DictWriter(f, fieldnames=VIDEOS_CSV_HEADER)
             csv_writer.writeheader()
         
     with open(video_csv_path, "a", newline="", encoding="utf-8") as f:
-        csv_writer = csv.DictWriter(f, fieldnames=["video_streamer_name",
-                                                    "video_streamer_channel_id",
-                                                    "video_number",
-                                                    "video_title",
-                                                    "video_duration",
-                                                    "video_tags",
-                                                    "video_category_type",
-                                                    "video_category",
-                                                    "video_publish_date"])
+        csv_writer = csv.DictWriter(f, fieldnames=VIDEOS_CSV_HEADER)
         csv_writer.writerow(video_info.get_dict())
 
 def save_vod_chats_to_csv(streamer_name: str, video_number: int, video_chats: list[ChatInfo]):
-    """Given streamer and vod chats, initializes (if necessary) and appends the chat to corresponding csv.
-
-    Chat csv will contain:
-        "chat_user_nickname",
-        "chat_user_channel_id",
-        "chat_message_time",
-        "chat_content",
-        "chat_message_type_code",
-        "chat_donation_amount",
-        "chat_extras"
-    """
+    """Given streamer and vod chats, initializes (if necessary) and appends the chat to corresponding csv."""
     chat_csv_path = Path(f"Raw Data\\Chats\\{streamer_name}_{video_number}_chats.csv")
     
     if not chat_csv_path.exists():
         with open(chat_csv_path, 'w', newline="", encoding="utf-8") as f:
-            csv_writer = csv.DictWriter(f, fieldnames=["chat_user_nickname",
-                                            "chat_user_channel_id",
-                                            "chat_message_time",
-                                            "chat_content",
-                                            "chat_message_type_code",
-                                            "chat_donation_amount",
-                                            "chat_extras"])
+            csv_writer = csv.DictWriter(f, fieldnames=CHATS_CSV_HEADER)
             csv_writer.writeheader()
     
     with open(chat_csv_path, 'a', newline="", encoding="utf-8") as f:
-        csv_writer = csv.DictWriter(f, fieldnames=["chat_user_nickname",
-                                            "chat_user_channel_id",
-                                            "chat_message_time",
-                                            "chat_content",
-                                            "chat_message_type_code",
-                                            "chat_donation_amount",
-                                            "chat_extras"])
+        csv_writer = csv.DictWriter(f, fieldnames=CHATS_CSV_HEADER)
         for chat_info in video_chats:
             csv_writer.writerow(chat_info.get_dict())
 
-
 if __name__ == "__main__":
-    pass
+    with open("TEST\\TEST.csv", "w", newline="", encoding="utf-8") as f:
+        csv_writer = csv.DictWriter(f, fieldnames=CHATS_CSV_HEADER)
+        csv_writer.writeheader()
     # @TODO Database Related
         # @TODO write a pipeline code from api fetch -> database:
             # @TODO read that csv file and put them into the db (look at csv lib doc)

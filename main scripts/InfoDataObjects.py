@@ -1,5 +1,40 @@
 from dataclasses import dataclass
 from typing import NamedTuple
+from pprint import pprint
+
+VIDEOS_CSV_HEADER = [
+    "video_streamer_name",
+    "video_streamer_channel_id",
+    "video_number",
+    "video_title",
+    "video_duration",
+    "video_tags",
+    "video_category_type",
+    "video_category",
+    "video_publish_date"
+]
+
+
+CHATS_CSV_HEADER = [
+    "chat_user_nickname",
+    "chat_user_channel_id",
+    "chat_message_time",
+    "chat_content",
+    "chat_message_type_code",
+    "chat_donation_amount",
+    "chat_extras"
+]
+
+USERS_CSV_HEADER = [
+    # @TODO fill in
+]
+
+STREAMERS_CSV_HEADER = [
+    "streamer_channel_name",
+    "streamer_channel_id",
+    "streamer_follower_count",
+    "streamer_channel_image_url"
+]
 
 class VideoInfo(NamedTuple):
     video_streamer_name: str
@@ -16,7 +51,8 @@ class VideoInfo(NamedTuple):
     # video_active_user_count: int
     
     def get_dict(self):
-        return {"video_streamer_name"   : self.video_streamer_name,
+        return {
+            "video_streamer_name"   : self.video_streamer_name,
             "video_streamer_channel_id" : self.video_streamer_channel_id,
             "video_number"              : self.video_number,
             "video_title"               : self.video_title,
@@ -37,13 +73,14 @@ class ChatInfo(NamedTuple):
     chat_extras: str
     
     def get_dict(self):
-        return {"chat_user_nickname"        : self.chat_user_nickname,
-                "chat_user_channel_id"      : self.chat_user_channel_id,
-                "chat_message_time"         : self.chat_message_time,
-                "chat_content"              : self.chat_content,
-                "chat_message_type_code"    : self.chat_message_type_code,
-                "chat_donation_amount"      : self.chat_donation_amount,
-                "chat_extras"               : self.chat_extras
+        return {
+            "chat_user_nickname"        : self.chat_user_nickname,
+            "chat_user_channel_id"      : self.chat_user_channel_id,
+            "chat_message_time"         : self.chat_message_time,
+            "chat_content"              : self.chat_content,
+            "chat_message_type_code"    : self.chat_message_type_code,
+            "chat_donation_amount"      : self.chat_donation_amount,
+            "chat_extras"               : self.chat_extras
         }
 
 class UserInfo(NamedTuple):
@@ -55,3 +92,7 @@ class UserInfo(NamedTuple):
     
     def get_dict(self):
         raise NotImplementedError
+    
+    
+if __name__ == "__main__":
+    pprint(VideoInfo.__dict__)
