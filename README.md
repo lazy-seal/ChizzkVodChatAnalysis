@@ -1,6 +1,9 @@
 # Chizzk VOD Analysis
 치지직에서 활동하는 스트리머 방송 다시보기의 채팅을 스크랩하여 데이터베이스에 저장할 수 있는 프래임워크입니다.
 
+# TODO:
+- use pandas instead of csv to handle csv files
+
 ## TODO Ideas for Data anyalysis
 ### Doesn't need Pre-Processing
 - Engagement metrics: follower count to average chatting user (video전체 시청자 수를 알아낼 수가 없다) ratio, messages per minute, 스트리머별 가장 '핫'한 다시보기 등
