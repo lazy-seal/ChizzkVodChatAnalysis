@@ -4,6 +4,7 @@
 # TODO:
 - use pandas instead of csv to handle csv files
 - centeralize api urls to InfoDataObjects.py (or should I?)
+- I should consider making Crawler.py into a class (since most of them uses the same httpx client)
 
 ## TODO Ideas for Data anyalysis
 ### Doesn't need Pre-Processing
