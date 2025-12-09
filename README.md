@@ -2,6 +2,10 @@
 치지직에서 활동하는 스트리머 방송 다시보기의 채팅을 스크랩하여 데이터베이스에 저장할 수 있는 프래임워크입니다.
 
 # TODO:
+- implement:
+    - update_streamers_csv(client: httpx.AsyncClient)
+    - update_user_csv(client: httpx.AsyncClient, str)
+    - load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo
 - use pandas instead of csv to handle csv files
 - centeralize api urls to InfoDataObjects.py (or should I?)
 - I should consider making Crawler.py into a class (since most of them uses the same httpx client)
@@ -54,7 +58,7 @@
 
 ### Other Ideas:
 - Guessing game of what streamer's data it is (like a chat frequency, or any other metric that I provided)
-    - "이 스트리머는 {각종 흥미로운 통계 등}. 누구일까요?" (video intro, maybe?)
+    - Video Hook: "이 스트리머는 {각종 흥미로운 통계 등}. 누구일까요?"
 - 스텔라이브 전부 있음: 스텔라이브 분석?
     사장(강지) vs 직원
 - 버튜버 vs 캠방?
