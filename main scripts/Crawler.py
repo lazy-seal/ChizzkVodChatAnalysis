@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
 
 async def streamer_lists_update(client: httpx.AsyncClient):
-    """
-    Updates the streamer info based on their channel id up to date
-    """
+    """Updates the streamer info based on their channel id up to date"""
     with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f1:
         csv_reader = csv.DictReader(f1)
         with open(f"Raw Data\\streamers_updated.csv", "w", newline="", encoding="utf-8") as f2:
@@ -37,15 +35,16 @@ async def streamer_lists_update(client: httpx.AsyncClient):
     logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, \
         delete streamers.csv and change updated file's name to streamers.csv\n\n")
 
-async def update_user_info(client: httpx.AsyncClient, user_id: str, is_streamer: bool = False):
+async def update_user_info(client: httpx.AsyncClient, user_channel_id: str, is_streamer: bool = False):
     """
     Updates given user's information in users.csv file
     @TODO: add list of attributes that might get updated by this function
     """
     raise NotImplementedError
 
-async def load_user_info(client: httpx.AsyncClient, user_id: str) -> UserInfo:
-    """Makes asyncronuous http call to Chzzk api to get user data based on their id"""
+async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
+    """Makes asyncronuous http call to Chzzk api to get user data based on their channel id"""
+    url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
     raise NotImplementedError
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:

@@ -3,6 +3,7 @@
 
 # TODO:
 - use pandas instead of csv to handle csv files
+- centeralize api urls to InfoDataObjects.py (or should I?)
 
 ## TODO Ideas for Data anyalysis
 ### Doesn't need Pre-Processing

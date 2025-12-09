@@ -10,4 +10,3 @@ if __name__ == "__main__":
         HEADERS = json.load(f)
         pprint(HEADERS)
         
-# https://api.chzzk.naver.com/service/v1/channels/54fa74e108df790f329127ddf1f11318 gives me user info (user hash id or chennelID on the last section)
