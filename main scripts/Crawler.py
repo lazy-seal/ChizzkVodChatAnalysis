@@ -52,13 +52,17 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     """Makes asyncronuous http call to Chzzk api to get user data based on their channel id"""
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
     res         = await client.get(url=url, headers=HEADERS)
-    res_json    = res.json()
+    
+    if res.status_code != 200:
+        raise ConnectionError("the api call was not successful")
+    
+    content = res.json()['content']
     
     to_write    = {
-        "streamer_channel_name"         : res_json['content']['channelName'],
-        "streamer_channel_id"           : res_json['content']['channelId'],
-        "streamer_follower_count"       : res_json['content']['followerCount'],
-        "streamer_channel_image_url"    : res_json['content']['channelImageUrl']
+        "streamer_channel_name"         : content['channelName'],
+        "streamer_channel_id"           : content['channelId'],
+        "streamer_follower_count"       : content['followerCount'],
+        "streamer_channel_image_url"    : content['channelImageUrl']
     }
     raise NotImplementedError
 
@@ -82,7 +86,11 @@ async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_cha
     url         = f"https://api.chzzk.naver.com/service/v1/channels/{streamer_channel_id}/videos"
     params      = {"size": n_videos_to_load}
     res         = await client.get(url, params=params, headers=HEADERS)
-    res_json    = res.json()
+    
+    if res.status_code != 200:
+        raise ConnectionError("the api call was not successful")
+    
+    res_json = res.json()
     
     for video in res_json["content"]["data"]:
         video_info = VideoInfo(
