@@ -5,7 +5,6 @@
 - implement:
     - update_streamers_csv(client: httpx.AsyncClient)
     - update_user_csv(client: httpx.AsyncClient, str)
-    - load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo
 - use pandas instead of csv to handle csv files
 - centeralize api urls to InfoDataObjects.py (or should I?)
 - I should consider making Crawler.py into a class (since most of them uses the same httpx client)
