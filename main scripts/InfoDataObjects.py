@@ -25,7 +25,7 @@ CHATS_CSV_HEADER = [
 ]
 
 USERS_CSV_HEADER = [
-    "user_channel_name",
+    "user_nickname",
     "user_channel_id",
     "user_channel_description",
     "user_follower_count",
@@ -89,21 +89,24 @@ class ChatInfo(NamedTuple):
         }
 
 class UserInfo(NamedTuple):
-    user_channel_id: str
     user_nickname: str
+    user_channel_id: str
+    user_channel_description: str
     user_follower_count: int
     user_different_names: list[str]
     user_channel_type: str  # "STREAMING" or "NORMAL", plus maybe something else I haven't seen
+    user_channel_image_url: str
     
     def get_dict(self):
         return {
-            "user_channel_id": self.user_channel_id,
             "user_nickname": self.user_nickname,
+            "user_channel_id": self.user_channel_id,
+            "user_channel_description": self.user_channel_description,
             "user_follower_count": self.user_follower_count,
             "user_different_names": self.user_different_names,
-            "user_channel_type": self.user_channel_type
+            "user_channel_type": self.user_channel_type,
+            "user_channel_image_url": self.user_channel_image_url
         }
-    
     
 if __name__ == "__main__":
     pprint(VideoInfo.__dict__)

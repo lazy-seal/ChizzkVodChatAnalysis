@@ -54,17 +54,20 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     res         = await client.get(url=url, headers=HEADERS)
     
     if res.status_code != 200:
-        raise ConnectionError("the api call was not successful")
+        raise ConnectionError(f"the api call was not successful:{res}")
     
     content = res.json()['content']
     
-    to_write    = {
-        "streamer_channel_name"         : content['channelName'],
-        "streamer_channel_id"           : content['channelId'],
-        "streamer_follower_count"       : content['followerCount'],
-        "streamer_channel_image_url"    : content['channelImageUrl']
-    }
-    raise NotImplementedError
+    user_info = UserInfo(
+        user_nickname               = content['channelName'],
+        user_channel_id             = content['channelId'],
+        user_channel_description    = content['channelDescription'],
+        user_follower_count         = content['followerCount'],
+        user_different_names        = content['channelName'],
+        user_channel_type           = content['channelType'],       # "NORMAL" or "STREAMING"
+        user_channel_image_url      = content['channelImageUrl']
+    )
+    return user_info
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
     """Performs a api call to loads and returns a list of vod replay information of the streamer.
@@ -88,7 +91,7 @@ async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_cha
     res         = await client.get(url, params=params, headers=HEADERS)
     
     if res.status_code != 200:
-        raise ConnectionError("the api call was not successful")
+        raise ConnectionError(f"the api call was not successful:{res}")
     
     res_json = res.json()
     
