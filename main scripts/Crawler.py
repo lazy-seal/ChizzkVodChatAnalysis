@@ -53,6 +53,7 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
     res         = await client.get(url=url, headers=HEADERS)
     res_json    = res.json()
+    
     to_write    = {
         "streamer_channel_name"         : res_json['content']['channelName'],
         "streamer_channel_id"           : res_json['content']['channelId'],

@@ -14,7 +14,6 @@ VIDEOS_CSV_HEADER = [
     "video_publish_date"
 ]
 
-
 CHATS_CSV_HEADER = [
     "chat_user_nickname",
     "chat_user_channel_id",
@@ -26,7 +25,13 @@ CHATS_CSV_HEADER = [
 ]
 
 USERS_CSV_HEADER = [
-    # @TODO fill in
+    "user_channel_name",
+    "user_channel_id",
+    "user_channel_description",
+    "user_follower_count",
+    "user_different_names",
+    "user_channel_type",
+    "user_channel_image_url"
 ]
 
 STREAMERS_CSV_HEADER = [
