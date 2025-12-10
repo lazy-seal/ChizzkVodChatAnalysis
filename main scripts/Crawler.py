@@ -37,7 +37,7 @@ async def update_streamers_csv(client: httpx.AsyncClient):
     # logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, \
     #     delete streamers.csv and change updated file's name to streamers.csv\n\n")
 
-async def update_user_csv(client: httpx.AsyncClient, str):
+async def update_user_csv(client: httpx.AsyncClient, user_channel_id: str):
     """
     Updates given user's information in users.csv. 
     If a user is streamer, they'll get updated on streamer.csv file too
