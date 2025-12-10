@@ -5,7 +5,7 @@ import logging
 from pprint import pprint
 import httpx
 import pandas as pd
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER
+from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER, USERS_CSV_HEADER
 
 with open("Private//private.json", encoding="utf-8") as f:
         private_file = json.load(f)
@@ -46,6 +46,27 @@ async def update_user_csv(client: httpx.AsyncClient, user_channel_id: str):
     @TODO: add list of attributes that might get updated by this function (followers, different names (when they change names), etc)
     @TODO: this function should utilize load_user_info function
     """
+    
+    """
+    first do an asyncronouse api call to all users.
+    await all of the results to collect
+    do a for loop on the collected users and update users.csv file
+    """
+    user_csv_path = Path("Raw Data\\users.csv")
+    
+    if user_csv_path.exists():
+        with open(user_csv_path, "w", encoding="utf-8") as f:
+            csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
+            csv_writer.writeheader()
+    
+    df = pd.read_csv("users.csv", encoding="utf-8")
+    for _, row in df.iterrows():
+        user_channel_id = row["user_channel_id"]
+        user_nickname = row["user_nickname"]
+        user_channel_desciption = row["user_channel_description"]
+        user_follower_count = row["user_follower_count"]
+        
+    
     raise NotImplementedError
 
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
@@ -63,11 +84,12 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
         user_channel_id             = content['channelId'],
         user_channel_description    = content['channelDescription'],
         user_follower_count         = content['followerCount'],
-        user_different_names        = content['channelName'],
         user_channel_type           = content['channelType'],       # "NORMAL" or "STREAMING"
         user_channel_image_url      = content['channelImageUrl']
     )
     return user_info
+
+
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
     """Performs a api call to loads and returns a list of vod replay information of the streamer.
@@ -183,6 +205,7 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
                 
     return chats
 
+
 def save_video_info_to_csv(video_info: VideoInfo):
     """Saves specific loaded vods on csv file."""
     video_csv_path = Path("Raw Data\\videos.csv")
@@ -195,6 +218,7 @@ def save_video_info_to_csv(video_info: VideoInfo):
     with open(video_csv_path, "a", newline="", encoding="utf-8") as f:
         csv_writer = csv.DictWriter(f, fieldnames=VIDEOS_CSV_HEADER)
         csv_writer.writerow(video_info.get_dict())
+
 
 def save_vod_chats_to_csv(streamer_name: str, video_number: int, video_chats: list[ChatInfo]):
     """Given streamer and vod chats, initializes (if necessary) and appends the chat to corresponding csv."""
