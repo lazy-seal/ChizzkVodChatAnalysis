@@ -4,8 +4,14 @@ from pathlib import Path
 import logging
 from pprint import pprint
 import httpx
+import asyncio
 import pandas as pd
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER, USERS_CSV_HEADER
+from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER, USERS_CSV_HEADER
+
+users_csv_lock = asyncio.Lock()
+streamers_csv_lock = asyncio.Lock()
+videos_csv_lock = asyncio.Lock()
+
 
 with open("Private//private.json", encoding="utf-8") as f:
         private_file = json.load(f)
@@ -52,27 +58,21 @@ async def update_user_csv(client: httpx.AsyncClient, user_channel_id: str):
     await all of the results to collect
     do a for loop on the collected users and update users.csv file
     """
-    user_csv_path = Path("Raw Data\\users.csv")
     
-    if user_csv_path.exists():
-        with open(user_csv_path, "w", encoding="utf-8") as f:
-            csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
-            csv_writer.writeheader()
-    
-    df = pd.read_csv("users.csv", encoding="utf-8")
-    for _, row in df.iterrows():
-        user_channel_id = row["user_channel_id"]
-        user_nickname = row["user_nickname"]
-        user_channel_desciption = row["user_channel_description"]
-        user_follower_count = row["user_follower_count"]
+    ### api requests
+    user_info = await load_user_info(client, user_channel_id)
+    # save_user_info_to_csv(client, [user_info])
         
     
-    raise NotImplementedError
+        
+    #@TODO TODO TODO: I can't decide how I want to make this because I'm not sure when does the result gets evaluated
+    # do I sacrifice memory or runtime?
+
 
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
     """Makes asyncronuous http call to Chzzk api to get user data based on their channel id"""
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
-    res         = await client.get(url=url, headers=HEADERS)
+    res = await client.get(url=url, headers=HEADERS)
     
     if res.status_code != 200:
         raise ConnectionError(f"the api call was not successful:{res}")
@@ -89,6 +89,43 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     )
     return user_info
 
+
+async def save_user_info_to_csv(user_info_list: list[UserInfo]):
+    """Saves MULTIPLE user infos into the csv file."""
+    users_csv_path = Path("Raw Data\\users.csv")
+    
+    if not users_csv_path.exists():
+        with open(users_csv_path, "w", encoding="utf-8") as f:
+            csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
+            csv_writer.writeheader()
+
+    async with users_csv_lock:
+        df = pd.read_csv(users_csv_path)
+        for user_info in user_info_list:
+            df.loc[df["user_channel_id"] == user_info.user_channel_id, USERS_CSV_HEADER] = list(user_info)
+
+    df.to_csv(users_csv_path)
+
+async def save_streamer_info_to_csv(streamer_info_list: list[StreamerInfo]):
+    """
+    Saves MULTIPLE streamer infos into the csv file.
+    
+    streamer.csv is protected by Lock object.
+    streamer.csv is subset of user.csv.
+    """
+    streamers_csv_path = Path("Raw Data\\streamers.csv")
+    
+    if not streamers_csv_path.exists():
+        with open(streamers_csv_path, "w", encoding="utf-8") as f:
+            csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
+            csv_writer.writeheader()
+
+    async with streamers_csv_lock:
+        df = pd.read_csv(streamers_csv_path)
+        for streamer_info in streamer_info_list:
+            df.loc[df["streamer_channel_id"] == streamer_info.streamer_channel_id, STREAMERS_CSV_HEADER] = list(streamer_info)
+
+    df.to_csv(streamers_csv_path)
 
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:

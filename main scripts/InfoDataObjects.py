@@ -34,11 +34,13 @@ USERS_CSV_HEADER = [
 ]
 
 STREAMERS_CSV_HEADER = [
-    "streamer_channel_name",
+    "streamer_nickname",
     "streamer_channel_id",
-    "streamer_follower_count",
-    "streamer_channel_image_url"
 ]
+
+class StreamerInfo(NamedTuple):
+    streamer_nickname: str
+    streamer_channel_id: str
 
 class VideoInfo(NamedTuple):
     video_streamer_name: str
@@ -104,6 +106,6 @@ class UserInfo(NamedTuple):
             "user_channel_type": self.user_channel_type,
             "user_channel_image_url": self.user_channel_image_url
         }
-    
+        
 if __name__ == "__main__":
     pprint(VideoInfo.__dict__)
