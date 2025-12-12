@@ -1,0 +1,37 @@
+import json
+from pprint import pprint
+import pandas as pd
+import httpx
+import asyncio
+from pathlib import Path
+from Crawler import update_streamer_info
+
+def drop_column(path:str | Path, column_name: str):
+    df = pd.read_csv(path, encoding="utf-8")
+    df = df.drop(columns=["column_name"])
+    df.to_csv(path, index=False, encoding="utf-8")
+
+def print_data_structure(data, indent=0):
+    """Recursively prints only the keys of a nested dictionary."""
+    if not isinstance(data, dict) and not isinstance(data, list):
+        print("  " * indent + str(type(data)))
+    elif isinstance(data, dict):
+        for key, value in data.items():
+            print("  " * indent + str(key))
+            print_data_structure(value, indent + 1)
+    else:
+        print("  " * (indent + 1) + f"[list]")
+        if len(data) > 0:
+            print_data_structure(data[0], indent + 2)
+
+async def streamers_update_test():
+    async with httpx.AsyncClient() as client:
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(update_streamer_info(client))
+if __name__ == "__main__":
+    asyncio.run(streamers_update_test())
+
+    df = pd.read_csv("Raw Data\\streamers.csv", encoding="utf-8")
+    df = df.drop(columns=["abc"])
+    df.to_csv("Raw Data\\streamers.csv", index=False, encoding="utf-8")
+        

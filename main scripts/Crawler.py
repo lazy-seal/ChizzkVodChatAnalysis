@@ -21,52 +21,57 @@ with open("Private//private.json", encoding="utf-8") as f:
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
 
-async def update_streamers_csv(client: httpx.AsyncClient):
-    """Updates the streamer info based on their channel id up to date in both streamers.csv and users.csv"""
-    raise NotImplementedError   # change the implementation to use pd
-    # with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f1:
-    #     csv_reader = csv.DictReader(f1)
-    #     with open(f"Raw Data\\streamers_updated.csv", "w", newline="", encoding="utf-8") as f2:
-    #         csv_writer = csv.DictWriter(f2, STREAMERS_CSV_HEADER)
-    #         csv_writer.writeheader()
-    #         for row in csv_reader:
-    #             url         = f"https://api.chzzk.naver.com/service/v1/channels/{row["streamer_channel_id"]}"
-    #             res         = await client.get(url=url, headers=HEADERS)
-    #             res_json    = res.json()
-    #             to_write    = {
-    #                 "streamer_channel_name"         : res_json['content']['channelName'],
-    #                 "streamer_channel_id"           : res_json['content']['channelId'],
-    #                 "streamer_follower_count"       : res_json['content']['followerCount'],
-    #                 "streamer_channel_image_url"    : res_json['content']['channelImageUrl']
-    #             }
-    #             csv_writer.writerow(to_write)
-    # logger.info("\n\nStreamers are updated: please check the streamers_updated.csv file. If everything looks OK, \
-    #     delete streamers.csv and change updated file's name to streamers.csv\n\n")
+async def update_streamer_info(client: httpx.AsyncClient):
+    """Updates the streamer info in users.csv"""
+    streamers_csv_path = Path("Raw Data\\streamers.csv")
+    
+    if not streamers_csv_path.exists():
+        return
+    
+    updated_users: list[UserInfo]           = []
+    updated_streamers: list[StreamerInfo]   = []
+    
+    df = pd.read_csv(streamers_csv_path, encoding="utf-8")
+    
+    for streamer_channel_id in df["streamer_channel_id"]:
+        user_info = await load_user_info(client, streamer_channel_id)
+        if user_info.user_channel_type != "STREAMING":
+            logger.warning(f"{user_info.user_nickname} no longer streams")
+        else:
+            updated_users.append(user_info)
+            updated_streamers.append(StreamerInfo(user_info.user_nickname, 
+                                                  user_info.user_channel_id))
 
-async def update_user_csv(client: httpx.AsyncClient, user_channel_id: str):
+    save_user_info_to_csv(updated_users)
+    if streamers_csv_path.exists() and updated_streamers:
+        save_streamer_info_to_csv(updated_streamers)
+
+async def update_user_info(client: httpx.AsyncClient):
     """
-    Updates given user's information in users.csv. 
-    If a user is streamer, they'll get updated on streamer.csv file too
+    Updates given all users' information in users.csv. 
     This function is 'superset' of update_streamers.
-        
-    @TODO: add list of attributes that might get updated by this function (followers, different names (when they change names), etc)
-    @TODO: this function should utilize load_user_info function
     """
+    users_csv_path = Path("Raw Data\\users.csv")
+    streamers_csv_path = Path("Raw Data\\streamers.csv")
     
-    """
-    first do an asyncronouse api call to all users.
-    await all of the results to collect
-    do a for loop on the collected users and update users.csv file
-    """
+    if not users_csv_path.exists():
+        return
     
-    ### api requests
-    user_info = await load_user_info(client, user_channel_id)
-    # save_user_info_to_csv(client, [user_info])
+    updated_users: list[UserInfo]           = []
+    updated_streamers: list[StreamerInfo]   = []
+    
+    df = pd.read_csv(users_csv_path, encoding="utf-8")
+    
+    for user_channel_id in df["user_channel_id"]:
+        user_info = await load_user_info(client, user_channel_id)
+        updated_users.append(user_info)
+        if user_info.user_channel_type == "STREAMING":
+            updated_streamers.append(StreamerInfo(user_info.user_nickname, 
+                                                  user_info.user_channel_id))
         
-    
-        
-    #@TODO TODO TODO: I can't decide how I want to make this because I'm not sure when does the result gets evaluated
-    # do I sacrifice memory or runtime?
+    save_user_info_to_csv(updated_users)
+    if streamers_csv_path.exists() and updated_streamers:
+        save_streamer_info_to_csv(updated_streamers)
 
 
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
@@ -90,7 +95,7 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     return user_info
 
 
-async def save_user_info_to_csv(user_info_list: list[UserInfo]):
+def save_user_info_to_csv(user_info_list: list[UserInfo]):
     """Saves MULTIPLE user infos into the csv file."""
     users_csv_path = Path("Raw Data\\users.csv")
     
@@ -99,14 +104,13 @@ async def save_user_info_to_csv(user_info_list: list[UserInfo]):
             csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
             csv_writer.writeheader()
 
-    async with users_csv_lock:
-        df = pd.read_csv(users_csv_path)
-        for user_info in user_info_list:
-            df.loc[df["user_channel_id"] == user_info.user_channel_id, USERS_CSV_HEADER] = list(user_info)
+    df = pd.read_csv(users_csv_path, encoding="utf-8")
+    for user_info in user_info_list:
+        df.loc[df["user_channel_id"] == user_info.user_channel_id, USERS_CSV_HEADER] = list(user_info)
 
-    df.to_csv(users_csv_path)
+    df.to_csv(users_csv_path, index=False, encoding="utf-8")
 
-async def save_streamer_info_to_csv(streamer_info_list: list[StreamerInfo]):
+def save_streamer_info_to_csv(streamer_info_list: list[StreamerInfo]):
     """
     Saves MULTIPLE streamer infos into the csv file.
     
@@ -120,12 +124,11 @@ async def save_streamer_info_to_csv(streamer_info_list: list[StreamerInfo]):
             csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
             csv_writer.writeheader()
 
-    async with streamers_csv_lock:
-        df = pd.read_csv(streamers_csv_path)
-        for streamer_info in streamer_info_list:
-            df.loc[df["streamer_channel_id"] == streamer_info.streamer_channel_id, STREAMERS_CSV_HEADER] = list(streamer_info)
+    df = pd.read_csv(streamers_csv_path, encoding="utf-8")
+    for streamer_info in streamer_info_list:
+        df.loc[df["streamer_channel_id"] == streamer_info.streamer_channel_id, STREAMERS_CSV_HEADER] = list(streamer_info)
 
-    df.to_csv(streamers_csv_path)
+    df.to_csv(streamers_csv_path, index=False, encoding="utf-8")
 
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:

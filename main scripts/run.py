@@ -1,11 +1,10 @@
-from Crawler import update_streamers_csv, logger, load_video_info, load_chat_data, save_vod_chats_to_csv, save_video_info_to_csv
+from Crawler import update_streamer_info, logger, load_video_info, load_chat_data, save_vod_chats_to_csv, save_video_info_to_csv
 from DatabaseManagement import dbObject
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
 
 import csv
 import time
 import asyncio
-import aiohttp
 import httpx
 from pprint import pprint
 
