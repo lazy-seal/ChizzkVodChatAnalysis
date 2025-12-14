@@ -4,7 +4,8 @@ import pandas as pd
 import httpx
 import asyncio
 from pathlib import Path
-from Crawler import update_streamer_info
+from Crawler import update_user_info
+import time
 
 def drop_column(path:str | Path, column_name: str):
     df = pd.read_csv(path, encoding="utf-8")
@@ -24,14 +25,12 @@ def print_data_structure(data, indent=0):
         if len(data) > 0:
             print_data_structure(data[0], indent + 2)
 
-async def streamers_update_test():
-    async with httpx.AsyncClient() as client:
-        async with asyncio.TaskGroup() as tg:
-            tg.create_task(update_streamer_info(client))
+            
 if __name__ == "__main__":
-    asyncio.run(streamers_update_test())
+    start = time.time()
+    asyncio.run(update_user_info(True))
+    print(time.time() - start)
 
-    df = pd.read_csv("Raw Data\\streamers.csv", encoding="utf-8")
-    df = df.drop(columns=["abc"])
-    df.to_csv("Raw Data\\streamers.csv", index=False, encoding="utf-8")
-        
+    # df = pd.read_csv("Raw Data\\users.csv", encoding="utf-8")
+    # df = df.drop(columns=["abc"])
+    # df.to_csv("Raw Data\\users.csv", index=False, encoding="utf-8")

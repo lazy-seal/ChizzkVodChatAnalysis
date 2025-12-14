@@ -30,7 +30,6 @@ USERS_CSV_HEADER = [
     "user_channel_description",
     "user_follower_count",
     "user_channel_type",
-    "user_channel_image_url"
 ]
 
 STREAMERS_CSV_HEADER = [
@@ -95,7 +94,6 @@ class UserInfo(NamedTuple):
     user_channel_description: str
     user_follower_count: int
     user_channel_type: str  # "STREAMING" or "NORMAL", plus maybe something else I haven't seen
-    user_channel_image_url: str
     
     def get_dict(self):
         return {
@@ -103,8 +101,7 @@ class UserInfo(NamedTuple):
             "user_channel_id": self.user_channel_id,
             "user_channel_description": self.user_channel_description,
             "user_follower_count": self.user_follower_count,
-            "user_channel_type": self.user_channel_type,
-            "user_channel_image_url": self.user_channel_image_url
+            "user_channel_type": self.user_channel_type
         }
         
 if __name__ == "__main__":
