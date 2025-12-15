@@ -71,8 +71,6 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     )
     return user_info
 
-
-# @TODO combine this and save streamer into one function
 def save_user_info_to_csv(user_info_list: list[UserInfo]):
     """
     Saves MULTIPLE users info into the csv file.

@@ -41,7 +41,7 @@ async def main():
                     s_channel_id    = row['streamer_channel_id']
                     s_channel_image = row['streamer_channel_image_url']
                     streamers.append(row)
-                    task = tg.create_task(load_video_info(client, s_name, s_channel_id, 2))   # @TODO make it accept cient
+                    task = tg.create_task(load_video_info(client, s_name, s_channel_id, 2))
                     video_tasks.append(task)
         all_videos = [task.result() for task in video_tasks]
         

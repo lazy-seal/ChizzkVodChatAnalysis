@@ -1,10 +1,12 @@
 import json
+import csv
 from pprint import pprint
 import pandas as pd
 import httpx
 import asyncio
 from pathlib import Path
-from Crawler import update_user_info
+from Crawler import update_user_info, load_user_info, save_user_info_to_csv, logger
+from InfoDataObjects import UserInfo
 import time
 
 def drop_column(path:str | Path, column_name: str):
@@ -25,10 +27,44 @@ def print_data_structure(data, indent=0):
         if len(data) > 0:
             print_data_structure(data[0], indent + 2)
 
+async def add_users_from_chat():
+    limit_max = 500
+    limit_left = limit_max
+    videos = []
+    # tasks = []
+    with open(f"Raw Data\\videos.csv", "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            videos.append((row["video_streamer_name"], row["video_number"]))
+        
+        # ok this might be the worst code I've ever written
+        async with httpx.AsyncClient() as client:
+            users = {} 
+            for videotuple in videos:
+                print(f"Looking at: Raw Data\\Chats\\{videotuple[0]}_{videotuple[1]}_chats.csv")
+                logger.info(f"Looking at: Raw Data\\Chats\\{videotuple[0]}_{videotuple[1]}_chats.csv")
+                
+                with open(f"Raw Data\\Chats\\{videotuple[0]}_{videotuple[1]}_chats.csv", "r", encoding="utf-8") as chatfile:
+                    reader = csv.DictReader(chatfile)
+                    
+                    for row in reader:
+                        if not row["chat_user_channel_id"] or row["chat_user_channel_id"] in users:
+                            continue
+                        limit_left -= 1
+                        if limit_left <= 0:
+                            limit_left = limit_max
+                            print("limit reached")
+                            time.sleep(3)
+                        user_info = await load_user_info(client, row["chat_user_channel_id"])
+                        users[user_info.user_channel_id] = user_info
+                        
+            print('saving users now')
+            save_user_info_to_csv(users.values()) # type: ignore
+                                
             
 if __name__ == "__main__":
     start = time.time()
-    asyncio.run(update_user_info(True))
+    asyncio.run(add_users_from_chat())
     print(time.time() - start)
 
     # df = pd.read_csv("Raw Data\\users.csv", encoding="utf-8")
