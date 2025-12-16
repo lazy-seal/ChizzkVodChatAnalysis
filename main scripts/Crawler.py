@@ -53,7 +53,7 @@ async def update_user_info(streamers_only = False):
 
 
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
-    """Makes asyncronuous http call to Chzzk api to get user data based on their channel id"""
+    """Makes asyncronuous http reqeust to Chzzk api to get user data based on their channel id"""
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
     res = await client.get(url=url, headers=HEADERS)
     

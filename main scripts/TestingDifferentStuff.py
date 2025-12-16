@@ -31,7 +31,6 @@ async def add_users_from_chat():
     limit_max = 500
     limit_left = limit_max
     videos = []
-    # tasks = []
     with open(f"Raw Data\\videos.csv", "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -39,27 +38,41 @@ async def add_users_from_chat():
         
         # ok this might be the worst code I've ever written
         async with httpx.AsyncClient() as client:
-            users = {} 
+            all_users = {}
+            to_store = {}
             for videotuple in videos:
                 print(f"Looking at: Raw Data\\Chats\\{videotuple[0]}_{videotuple[1]}_chats.csv")
                 logger.info(f"Looking at: Raw Data\\Chats\\{videotuple[0]}_{videotuple[1]}_chats.csv")
                 
                 with open(f"Raw Data\\Chats\\{videotuple[0]}_{videotuple[1]}_chats.csv", "r", encoding="utf-8") as chatfile:
                     reader = csv.DictReader(chatfile)
-                    
                     for row in reader:
-                        if not row["chat_user_channel_id"] or row["chat_user_channel_id"] in users:
-                            continue
-                        limit_left -= 1
-                        if limit_left <= 0:
-                            limit_left = limit_max
-                            print("limit reached")
-                            time.sleep(3)
-                        user_info = await load_user_info(client, row["chat_user_channel_id"])
-                        users[user_info.user_channel_id] = user_info
-                        
-            print('saving users now')
-            save_user_info_to_csv(users.values()) # type: ignore
+                        try:
+                            if not row["chat_user_channel_id"] or row["chat_user_channel_id"] in all_users:
+                                continue
+                            
+                            limit_left -= 1
+                            if limit_left <= 0:
+                                limit_left = limit_max
+                                print(f"limit reached: saving {len(to_store)} users and sleeps for 30 sec")
+                                save_user_info_to_csv(to_store.values()) # type: ignore
+                                to_store = {}
+                                time.sleep(30)
+                                
+                            user_info = await load_user_info(client, row["chat_user_channel_id"])
+                            to_store[user_info.user_channel_id] = user_info
+                            all_users[user_info.user_channel_id] = user_info
+                            
+                        except Exception as e:
+                            print(f"Exception Occured: {e}")
+                            print(f"Saving {len(to_store)} users and and sleeps for 10 minutes")
+                            save_user_info_to_csv(to_store.values()) # type: ignore
+                            to_store = {}
+                            time.sleep(600)
+                            
+            print(f'All Chat Iterated: saving rest of the users: {len(to_store)}')
+            save_user_info_to_csv(to_store.values()) # type: ignore
+            
                                 
             
 if __name__ == "__main__":
