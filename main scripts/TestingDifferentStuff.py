@@ -73,10 +73,14 @@ async def add_users_from_chat():
             print(f'All Chat Iterated: saving rest of the users: {len(to_store)}')
             save_user_info_to_csv(to_store.values()) # type: ignore
 
-
+async def example():
+    async with httpx.AsyncClient() as client:
+        uinfo = await load_user_info(client, "b2fcc309d14c98ee241be56a488eac32")
+        pprint(uinfo.get_dict())
                                 
             
 if __name__ == "__main__":
     start = time.time()
-    asyncio.run(add_users_from_chat())
+    # asyncio.run(add_users_from_chat())
+    asyncio.run(example())
     print(time.time() - start)

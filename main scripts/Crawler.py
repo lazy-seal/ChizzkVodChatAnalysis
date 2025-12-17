@@ -62,8 +62,9 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     # knwon responses:
     # 200: great
     # 500/9002: "이 채널은 네이버 운영 정책을 위반하여 일시적으로 이용할 수 없습니다."
+        # 채널 정지당한 계정
     
-    if res.status_code not in (200, 500):
+    if res.status_code != 200:
         raise ConnectionError(f"the api call was not successful:{res}")
     
     content = res.json()['content']
