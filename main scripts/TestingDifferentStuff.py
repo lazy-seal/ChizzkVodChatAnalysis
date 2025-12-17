@@ -9,7 +9,7 @@ from Crawler import update_user_info, load_user_info, save_user_info_to_csv, log
 from InfoDataObjects import UserInfo
 import time
 
-def drop_column(path:str | Path, column_name: str):
+def drop_csv_column(path:str | Path, column_name: str):
     df = pd.read_csv(path, encoding="utf-8")
     df = df.drop(columns=["column_name"])
     df.to_csv(path, index=False, encoding="utf-8")
@@ -72,14 +72,11 @@ async def add_users_from_chat():
                             
             print(f'All Chat Iterated: saving rest of the users: {len(to_store)}')
             save_user_info_to_csv(to_store.values()) # type: ignore
-            
+
+
                                 
             
 if __name__ == "__main__":
     start = time.time()
     asyncio.run(add_users_from_chat())
     print(time.time() - start)
-
-    # df = pd.read_csv("Raw Data\\users.csv", encoding="utf-8")
-    # df = df.drop(columns=["abc"])
-    # df.to_csv("Raw Data\\users.csv", index=False, encoding="utf-8")

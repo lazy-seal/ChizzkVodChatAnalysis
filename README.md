@@ -3,11 +3,20 @@
 
 # TODO:
 - implement:
-    - a function to iterate through chats to input users (gonna take a lot of time)
-    - a function that does above for every new chat file gathered
-- use pandas instead of csv to handle csv files
+    - api call timout
+    - DatabaseManagement.py: figure out asynchronous way of inputting data
+        chat, videos, users: straight insert into
+        chats references videos, users
+        videos references users (streamers)
+        users does not reference
+    - run.py
+        - (db) while going through chat, count how many chat, donation, and active users are in the video
+        - save user.csv while doing the initial fetching?
+    - eventaully figure out way to move the data directly from api to db without going through chat
+
+    -  for every new chat file gathered
 - centeralize api urls to InfoDataObjects.py (or should I?)
-- I should consider making Crawler.py into a class (since most of them uses the same httpx client)
+- Should I consider making Crawler.py into a class? or not? (since most of them uses the same httpx client)
 
 ## TODO Ideas for Data anyalysis
 ### Doesn't need Pre-Processing

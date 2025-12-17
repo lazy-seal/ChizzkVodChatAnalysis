@@ -2,6 +2,23 @@ from dataclasses import dataclass
 from typing import NamedTuple
 from pprint import pprint
 
+class CHZZK_URL:
+    def __init__(self):
+        pass
+    """
+    videos: f"https://api.chzzk.naver.com/service/v1/channels/{streamer_channel_id}/videos"
+    users: f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
+    chat: f"https://api.chzzk.naver.com/service/v1/videos/{video_number}/chats?playerMessageTime={message_time}"
+    """
+
+# @TODO file path with enum?
+"""
+Path("Raw Data\\streamers.csv")
+Path("Raw Data\\users.csv")
+Path("Raw Data\\videos.csv")
+Path(f"Raw Data\\Chats\\{streamer_name}_{video_number}_chats.csv")
+"""
+
 VIDEOS_CSV_HEADER = [
     "video_streamer_name",
     "video_streamer_channel_id",

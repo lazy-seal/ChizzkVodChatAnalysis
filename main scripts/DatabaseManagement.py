@@ -1,7 +1,7 @@
 import psycopg2
 import json
 
-
+# make it Singleton?
 class dbObject:
     def __init__(self):
         with open("private.json", "r", encoding="utf-8") as f: #@TODO make resource.json or other file to store private data
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     
     chatdb.endSession()
     
-    # @TODO Database Related
-        # @TODO write a pipeline code from api fetch -> database:
-            # @TODO read that csv file and put them into the db (look at csv lib doc)
+    # @TODO study async postgreSQL methodology
+    # @TODO chat
+        # @TODO function to store a bunch of chat int db
     

@@ -33,7 +33,7 @@ async def update_user_info(streamers_only = False):
     if not csv_path.exists():
         logger.info(f"Update Not possible: {csv_path} does not exist")
         return
-    
+
     updated_users: list[UserInfo]           = []
     updated_streamers: list[StreamerInfo]   = []
     
@@ -44,7 +44,7 @@ async def update_user_info(streamers_only = False):
         async with asyncio.TaskGroup() as tg:
             for channel_id in df["streamer_channel_id" if streamers_only else "user_channel_id"]:
                 tasks.append(tg.create_task(load_user_info(client, channel_id)))
-                
+
     for user_info in [task.result() for task in tasks]:
         if user_info.user_channel_type == "STREAMING":
             updated_streamers.append(StreamerInfo(user_info.user_nickname, 
@@ -59,10 +59,17 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
     res = await client.get(url=url, headers=HEADERS)
     
-    if res.status_code != 200:
+    # knwon responses:
+    # 200: great
+    # 500/9002: "이 채널은 네이버 운영 정책을 위반하여 일시적으로 이용할 수 없습니다."
+    
+    if res.status_code not in (200, 500):
         raise ConnectionError(f"the api call was not successful:{res}")
     
     content = res.json()['content']
+    
+    if content['channelName'] == "(알 수 없음)":
+        pprint(content)
     
     user_info = UserInfo(
         user_nickname               = content['channelName'],
