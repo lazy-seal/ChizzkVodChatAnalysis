@@ -4,6 +4,8 @@
 # TODO:
 - implement:
     - api call timout
+    - error handling when no data was received:
+        maybe return empty DataInfo namedtuple?
     - DatabaseManagement.py: figure out asynchronous way of inputting data
         chat, videos, users: straight insert into
         chats references videos, users
