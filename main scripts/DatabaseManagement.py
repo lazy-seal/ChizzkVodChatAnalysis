@@ -1,5 +1,6 @@
 import psycopg2
 import json
+from pathlib import Path
 
 # make it Singleton?
 class dbObject:
@@ -9,30 +10,32 @@ class dbObject:
             dbpassword = f_json['dbpassword']
         self.conn = psycopg2.connect(host="localhost", dbname="ChzzkChats", user="postgres", password=dbpassword, port=5432)
         self.cur = self.conn.cursor()
+    
+    # def exists_in_db(info)
 
-    # def connectToChzzkChats(self):
-    #     self.conn = psycopg2.connect(host="localhost", dbname="ChzzkChats", user="postgres",
-    #                         password="6801", port=5432)
-    #     self.cur = self.conn.cursor()
-    #     # @TODO implement code when db wasn't connected
-
-    def getCursor(self):
+    def get_cursor(self):
         return self.cur
     
-    def endSession(self):
-        if self.cur:
-            self.cur.close()
+    def end_session(self):
+        if not self.cur:
+            print("No session to close")
+        self.cur.close()
         self.conn.close()
     
-    def executeSQLScript(self, file_path: str):
+    def execute_sql_script(self, file_path: Path):
+        """executes sql script"""
         with open(file_path, "r", encoding="utf-8") as f:
             script = f.read()
             self.cur.execute(script)
+    
+    def execute_sql_statement(self, statement: str):
+        """executes sql statement"""
+        raise NotImplementedError
 
 if __name__ == "__main__":
     chatdb = dbObject()
     # chatdb.connectToChzzkChats()
-    chatdb.getCursor()
+    chatdb.get_cursor()
     
     # code here to implement
     """
@@ -42,7 +45,7 @@ if __name__ == "__main__":
     Use the streamer's id to create video_streamer_id
     """
     
-    chatdb.endSession()
+    chatdb.end_session()
     
     # @TODO study async postgreSQL methodology
     # @TODO chat

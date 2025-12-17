@@ -41,14 +41,6 @@ CHATS_CSV_HEADER = [
     "chat_extras"
 ]
 
-USERS_CSV_HEADER = [
-    "user_nickname",
-    "user_channel_id",
-    "user_channel_description",
-    "user_follower_count",
-    "user_channel_type",
-]
-
 STREAMERS_CSV_HEADER = [
     "streamer_nickname",
     "streamer_channel_id",

@@ -4,9 +4,6 @@ CREATE TABLE users(
 	user_id SERIAL PRIMARY KEY,
 	user_channel_id TEXT UNIQUE,
 	user_nickname TEXT UNIQUE,
-	user_follower_count INTEGER,
-	user_different_names TEXT[],
-	user_channel_type TEXT, -- either "STREAMING" or "NORMAL", plus maybe something else I haven't seen
 );
 
 CREATE TABLE videos(

@@ -6,7 +6,7 @@ from pprint import pprint
 import httpx
 import asyncio
 import pandas as pd
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER, USERS_CSV_HEADER
+from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER
 
 # I don't really need a lock on async processes?
 # I just need to make sure coroutine closes the file
@@ -23,39 +23,14 @@ with open("Private//private.json", encoding="utf-8") as f:
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
 
-async def update_user_info(streamers_only = False):
-    """Updates the streamer info in users.csv"""
-    if streamers_only:
-        csv_path = Path("Raw Data\\streamers.csv")
-    else:
-        csv_path = Path("Raw Data\\users.csv")
-    
-    if not csv_path.exists():
-        logger.info(f"Update Not possible: {csv_path} does not exist")
-        return
-
-    updated_users: list[UserInfo]           = []
-    updated_streamers: list[StreamerInfo]   = []
-    
-    df = pd.read_csv(csv_path, encoding="utf-8")
-    
-    tasks = []
-    async with httpx.AsyncClient() as client:
-        async with asyncio.TaskGroup() as tg:
-            for channel_id in df["streamer_channel_id" if streamers_only else "user_channel_id"]:
-                tasks.append(tg.create_task(load_user_info(client, channel_id)))
-
-    for user_info in [task.result() for task in tasks]:
-        if user_info.user_channel_type == "STREAMING":
-            updated_streamers.append(StreamerInfo(user_info.user_nickname, 
-                                                user_info.user_channel_id))
-        updated_users.append(user_info)
-
-    save_user_info_to_csv(updated_users)
-
-
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
-    """Makes asyncronuous http reqeust to Chzzk api to get user data based on their channel id"""
+    """
+    Description:
+        Makes asyncronuous http reqeust to Chzzk api to get user data based on their channel id
+    
+    Important:
+        This function raises ConnectionError when non-200 status code was returned by api call
+    """
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
     res = await client.get(url=url, headers=HEADERS)
     
@@ -80,54 +55,6 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
         user_channel_type           = content['channelType'],       # "NORMAL" or "STREAMING"
     )
     return user_info
-
-def save_user_info_to_csv(user_info_list: list[UserInfo]):
-    """
-    Saves MULTIPLE users info into the csv file.
-    Any streamers in user_info_list is also saved to streamers.csv
-    """
-    users_csv_path = Path("Raw Data\\users.csv")
-    streamers_csv_path = Path("Raw Data\\streamers.csv")
-    streamer_info_list = []
-    
-    if not users_csv_path.exists():
-        with open(users_csv_path, "w", encoding="utf-8") as f:
-            csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
-            csv_writer.writeheader()
-    
-    if not streamers_csv_path.exists():
-        with open(streamers_csv_path, "w", encoding="utf-8") as f:
-            csv_writer = csv.DictWriter(f, USERS_CSV_HEADER)
-            csv_writer.writeheader()
-
-    ### Save User Data Starts ###
-    users_df = pd.read_csv(users_csv_path, encoding="utf-8")
-    for user_info in user_info_list:
-        if user_info.user_channel_type == "STREAMING":
-            streamer_info_list.append(StreamerInfo(user_info.user_nickname, 
-                                                user_info.user_channel_id))
-        user = users_df["user_channel_id"] == user_info.user_channel_id
-        if user.any():
-            users_df.loc[users_df["user_channel_id"] == user_info.user_channel_id, 
-                         USERS_CSV_HEADER] = list(user_info)
-        else:
-            users_df.loc[len(users_df)] = list(user_info)
-    users_df.to_csv(users_csv_path, index=False, encoding="utf-8")
-    ### Save User Data Ends ###
-    
-    
-    ### Save Streamer Data Starts ###
-    if streamer_info_list:
-        streamers_df = pd.read_csv(streamers_csv_path, encoding="utf-8")
-        for streamer_info in streamer_info_list:
-            streamer = users_df["user_channel_id"] == streamer_info.streamer_channel_id
-            if streamer.any():
-                streamers_df.loc[streamers_df["streamer_channel_id"] == streamer_info.streamer_channel_id, 
-                                 STREAMERS_CSV_HEADER] = list(streamer_info)
-            else:
-                streamers_df.loc[len(streamers_df)] = list(streamer_info)
-        streamers_df.to_csv(streamers_csv_path, index=False, encoding="utf-8")
-    ### Save Streamer Data Edns ###
 
 
 async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
