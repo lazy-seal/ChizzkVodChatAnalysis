@@ -11,7 +11,9 @@ class dbObject:
         self.conn = psycopg2.connect(host="localhost", dbname="ChzzkChats", user="postgres", password=dbpassword, port=5432)
         self.cur = self.conn.cursor()
     
-    # def exists_in_db(info)
+    def exists_in_db(self, info) -> bool:
+        """Checks db to see if info (user, chat, vid) exists in db"""
+        raise NotImplementedError
 
     def get_cursor(self):
         return self.cur
@@ -27,6 +29,10 @@ class dbObject:
         with open(file_path, "r", encoding="utf-8") as f:
             script = f.read()
             self.cur.execute(script)
+    
+    def insert_info(self, info) -> bool:
+        """Inserts the info to db"""
+        raise NotImplementedError
     
     def execute_sql_statement(self, statement: str):
         """executes sql statement"""
