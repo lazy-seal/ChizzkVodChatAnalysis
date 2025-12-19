@@ -8,6 +8,7 @@ from pathlib import Path
 from Crawler import load_user_info, logger
 from InfoDataObjects import UserInfo
 import time
+from functools import wraps
 
 def drop_csv_column(path:str | Path, column_name: str):
     df = pd.read_csv(path, encoding="utf-8")
@@ -32,11 +33,22 @@ async def example():
         uinfo = await load_user_info(client, "b2fcc309d14c98ee241be56a488eac32")
         pprint(uinfo.get_dict())
 
-def print_func_when_called(func):   # might add an option to print out the parameters too?
-    def wrapper(*args, **kwargs):
-        print(f"(CALLED): {func.__qualname__}")
-        return func(*args, **kwargs)
-    return wrapper
+def print_func_when_called(show_args=False):
+    """
+    Prints the decorated function's name and arguments (if exists and show_args is set to True) when it's called
+    """
+    def decorator(func):
+        @wraps(func)    # this makes sure that the wrapped function keeps its __name__ and __doc__
+        def wrapper(*args, **kwargs):
+            print(f"(CALLED): {func.__qualname__}")
+            if show_args:
+                if args:
+                    print(f"\t(ARGS): {args!r}")
+                if kwargs:
+                    print(f"\t(KWARGS): {kwargs!r}")
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
         
             
 if __name__ == "__main__":
