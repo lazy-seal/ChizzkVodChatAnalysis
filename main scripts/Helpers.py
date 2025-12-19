@@ -34,8 +34,8 @@ async def example():
 
 def print_func_when_called(func):   # might add an option to print out the parameters too?
     def wrapper(*args, **kwargs):
-        print(f"{func.__qualname__} has been called")
-        func(*args, **kwargs)
+        print(f"(CALLED): {func.__qualname__}")
+        return func(*args, **kwargs)
     return wrapper
         
             
