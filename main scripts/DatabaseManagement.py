@@ -1,28 +1,30 @@
 import psycopg2
+# import asyncpg
+import datetime
 import json
 from pathlib import Path
+from Helpers import print_func_when_called
 
 # make it Singleton?
-class dbObject:
+class localChzzkDbConnection:
+    """Context Manager for Database Connection"""
     def __init__(self):
-        with open("private.json", "r", encoding="utf-8") as f: #@TODO make resource.json or other file to store private data
+        with open("Private\\private.json", "r", encoding="utf-8") as f: #@TODO make resource.json or other file to store private data
             f_json = json.load(f)
             dbpassword = f_json['dbpassword']
-        self.conn = psycopg2.connect(host="localhost", dbname="ChzzkChats", user="postgres", password=dbpassword, port=5432)
+        self.conn = psycopg2.connect(host="localhost", database="ChzzkChats", user="postgres", password=dbpassword, port=5432)
         self.cur = self.conn.cursor()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.cur.close()
+        self.conn.close()
     
     def exists_in_db(self, info) -> bool:
         """Checks db to see if info (user, chat, vid) exists in db"""
         raise NotImplementedError
-
-    def get_cursor(self):
-        return self.cur
-    
-    def end_session(self):
-        if not self.cur:
-            print("No session to close")
-        self.cur.close()
-        self.conn.close()
     
     def execute_sql_script(self, file_path: Path):
         """executes sql script"""
@@ -36,12 +38,13 @@ class dbObject:
     
     def execute_sql_statement(self, statement: str):
         """executes sql statement"""
-        raise NotImplementedError
+        self.cur.execute(statement)   # obvious protection against sql injection needed
 
 if __name__ == "__main__":
-    chatdb = dbObject()
+    with localChzzkDbConnection() as chzzk_db:
+        # chzzk_db.execute_sql_statement("DROP TABLE IF EXISTS chats, videos, users CASCADE;")
+        print(localChzzkDbConnection.__init__.__qualname__)
     # chatdb.connectToChzzkChats()
-    chatdb.get_cursor()
     
     # code here to implement
     """
@@ -51,9 +54,7 @@ if __name__ == "__main__":
     Use the streamer's id to create video_streamer_id
     """
     
-    chatdb.end_session()
-    
     # @TODO study async postgreSQL methodology
     # @TODO chat
-        # @TODO function to store a bunch of chat int db
+    # @TODO function to store a bunch of chat int db
     

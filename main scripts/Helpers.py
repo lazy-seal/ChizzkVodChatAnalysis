@@ -31,7 +31,13 @@ async def example():
     async with httpx.AsyncClient() as client:
         uinfo = await load_user_info(client, "b2fcc309d14c98ee241be56a488eac32")
         pprint(uinfo.get_dict())
-                                
+
+def print_func_when_called(func):   # might add an option to print out the parameters too?
+    def wrapper(*args, **kwargs):
+        print(f"{func.__qualname__} has been called")
+        func(*args, **kwargs)
+    return wrapper
+        
             
 if __name__ == "__main__":
     start = time.time()

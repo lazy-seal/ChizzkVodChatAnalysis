@@ -1,5 +1,5 @@
-from Crawler import update_user_info, logger, load_video_info, load_chat_data, save_vod_chats_to_csv, save_video_info_to_csv
-from DatabaseManagement import dbObject
+from Crawler import logger, load_video_info, load_chat_data, save_vod_chats_to_csv, save_video_info_to_csv
+from DatabaseManagement import localChzzkDbConnection
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
 
 import csv
