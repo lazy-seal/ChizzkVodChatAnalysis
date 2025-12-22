@@ -70,4 +70,11 @@
     사장(강지) vs 직원
 - 버튜버 vs 캠방?
 - Phone viwer vs PC viewer?
-- 
+
+## Future Ideas:
+- Streamer Bot (sort of)
+    - Data gained by chat with the current program
+    - plus, for each video, see if the replay is uploaded on youtube
+    - if so, download auto-gen subtitles for it
+    - match the time of the chat with the replay
+    - train the llm

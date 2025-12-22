@@ -37,9 +37,7 @@ async def main():
             async with asyncio.TaskGroup() as tg:
                 for row in csv_reader:
                     s_name          = row['streamer_channel_name']
-                    s_follower_cout = int(row['streamer_follower_count'])
                     s_channel_id    = row['streamer_channel_id']
-                    s_channel_image = row['streamer_channel_image_url']
                     streamers.append(row)
                     task = tg.create_task(load_video_info(client, s_name, s_channel_id, 2))
                     video_tasks.append(task)

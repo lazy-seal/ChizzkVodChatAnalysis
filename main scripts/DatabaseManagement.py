@@ -8,12 +8,13 @@ from Helpers import print_func_when_called
 # make it Singleton?
 class localChzzkDbConnection:
     """Context Manager for Database Connection"""
-    def __init__(self):
+    def __init__(self, is_testing=False):
         with open("Private\\private.json", "r", encoding="utf-8") as f: #@TODO make resource.json or other file to store private data
             f_json = json.load(f)
             dbpassword = f_json['dbpassword']
         self.conn = psycopg2.connect(host="localhost", database="ChzzkChats", user="postgres", password=dbpassword, port=5432)
         self.cur = self.conn.cursor()
+        self.is_testing = is_testing
     
     def __repr__(self):
         return "localChzzkDbConnection()"
@@ -24,8 +25,14 @@ class localChzzkDbConnection:
     
     @print_func_when_called(True)
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Commits (iff not testing) and closes connection and cursor"""
+        if not self.is_testing:
+            self.conn.commit()
         self.cur.close()
         self.conn.close()
+        
+        if exc_type != None:
+            print(f"Error Occured: {exc_type}, {exc_value}, {exc_traceback}")
     
     @print_func_when_called()
     def exists_in_db(self, info) -> bool:
@@ -51,7 +58,7 @@ class localChzzkDbConnection:
 
 if __name__ == "__main__":
     with localChzzkDbConnection() as chzzk_db:
-        chzzk_db.execute_sql_statement("DROP TABLE IF EXISTS chats, videos, users CASCADE;")
+        # chzzk_db.execute_sql_statement("DROP TABLE IF EXISTS chats, videos, users CASCADE;")
         pass
     # code here to implement
     """
