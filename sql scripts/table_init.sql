@@ -1,13 +1,13 @@
 DROP TABLE IF EXISTS chats, videos, users CASCADE;
 
 CREATE TABLE users(
-	user_id TEXT PRIMARY KEY,
-	user_nickname TEXT UNIQUE,
+	user_id TEXT PRIMARY KEY, -- Note that this is text
+	user_nickname TEXT
 );
 
 CREATE TABLE videos(
-	video_id SERIAL PRIMARY KEY,	-- video_number
-	video_streamer_id INTEGER REFERENCES users(user_id),
+	video_id INTEGER PRIMARY KEY,	-- video_number
+	video_streamer_id TEXT REFERENCES users(user_id),
 	video_title TEXT,
 	video_duration INTEGER, -- video_duration is in seconds
 	video_tags TEXT[],
@@ -21,7 +21,7 @@ CREATE TABLE videos(
 
 CREATE TABLE chats(
 	chat_id SERIAL PRIMARY KEY,
-	chat_user_id INTEGER REFERENCES users(user_id) NOT NULL,
+	chat_user_id TEXT REFERENCES users(user_id) NOT NULL,
 	chat_video_id INTEGER REFERENCES videos(video_id) NOT NULL,
 	chat_message_time INTEGER NOT NULL,
 	chat_content TEXT NOT NULL,

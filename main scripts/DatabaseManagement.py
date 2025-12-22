@@ -19,7 +19,6 @@ class localChzzkDbConnection:
     def __repr__(self):
         return "localChzzkDbConnection()"
    
-    @print_func_when_called()
     def __enter__(self):
         return self
     
@@ -39,18 +38,29 @@ class localChzzkDbConnection:
         """Checks db to see if info (user, chat, vid) exists in db"""
         raise NotImplementedError
     
+    # @print_func_when_called()
+    def insert_info(self, info) -> bool:
+        """Inserts the info to db"""
+        raise NotImplementedError
+
+    @print_func_when_called()
+    def insert_statistics_for_vod(self, video_number: int):
+        """
+        	Performs query to find: 
+                video_chat_count, 
+                video_total_donation_amount, 
+                video_active_user_count INTEGER
+            And inserts them into corresponding video row
+        """
+        raise NotImplementedError
+    
     @print_func_when_called()
     def execute_sql_script(self, file_path: Path):
         """executes sql script"""
         with open(file_path, "r", encoding="utf-8") as f:
             script = f.read()
             self.cur.execute(script)
-    
-    @print_func_when_called()
-    def insert_info(self, info) -> bool:
-        """Inserts the info to db"""
-        raise NotImplementedError
-    
+            
     @print_func_when_called(True)
     def execute_sql_statement(self, statement: str):
         """executes sql statement"""
@@ -58,8 +68,7 @@ class localChzzkDbConnection:
 
 if __name__ == "__main__":
     with localChzzkDbConnection() as chzzk_db:
-        # chzzk_db.execute_sql_statement("DROP TABLE IF EXISTS chats, videos, users CASCADE;")
-        pass
+        chzzk_db.execute_sql_script(Path("sql scripts\\table_init.sql"))
     # code here to implement
     """
     First, check if the streamer already exists on the users

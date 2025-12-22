@@ -13,7 +13,7 @@ async def save_all_chats_from_vod(client: httpx.AsyncClient, video_info: VideoIn
     video_number                = video_info.video_number
     streamer_name               = video_info.video_streamer_name
     
-    for i in range(api_request_limit):
+    for _ in range(api_request_limit):
         chats = await load_chat_data(client, video_number, next_message_time)
         
         if not chats:       # consider changing this to a while loop condition? But that means I have to start with chat being some sort of true value before the loop, I don't like that.
@@ -22,7 +22,6 @@ async def save_all_chats_from_vod(client: httpx.AsyncClient, video_info: VideoIn
         save_vod_chats_to_csv(streamer_name, video_number, chats)
         last_message_time = chats[-1].chat_message_time
         next_message_time = last_message_time + 1
-        
 
 async def main():
     streamers   : list[dict[str, str | int]]    = []
