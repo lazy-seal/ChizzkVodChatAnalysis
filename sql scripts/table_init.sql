@@ -30,7 +30,7 @@ CREATE TABLE chats(
 	chat_extras JSONB
 );
 
-CREATE INDEX idx_user_id ON users (user_id);
-CREATE INDEX idx_video_id ON videos (video_id);
+CREATE UNIQUE INDEX idx_user_id ON users (user_id);
+CREATE UNIQUE INDEX idx_video_id ON videos (video_id);
 CREATE INDEX idx_chats_per_streamer ON chats (chat_user_id);
 CREATE INDEX idx_chats_per_video ON chats (chat_video_id);
