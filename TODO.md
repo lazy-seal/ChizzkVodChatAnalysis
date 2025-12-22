@@ -1,21 +1,14 @@
 # TODO implementation:
 - implement:
+    - complete testing
     - instead of doing api call for each and every user, I should just use the info given by chat data
-    - api call timout
-    - error handling when no data was received:
-        maybe return empty DataInfo namedtuple?
-    - DatabaseManagement.py: figure out asynchronous way of inputting data
-        chat, videos, users: straight insert into
-        chats references videos, users
-        videos references users (streamers)
-        users does not reference
+    - Error handling:
+        - api call timout
+        - when no data was received: maybe return empty DataInfo namedtuple?
     - run.py
         - (db) while going through chat, count how many chat, donation, and active users are in the video
-        - save user.csv while doing the initial fetching?
-    - eventaully figure out way to move the data directly from api to db without going through chat
-    -  for every new chat file gathered
+    - eventaully figure out way to move the data directly from api to db (without csv in the middle)
 - centeralize api urls to InfoDataObjects.py (or should I?)
-- Should I consider making Crawler.py into a class? or not? (since most of them uses the same httpx client)
 
 # TODO Ideas for Data anyalysis
 ## Doesn't need Pre-Processing
@@ -58,6 +51,7 @@
 ## Needs Pre-processing:
 - Word Frequency + Wordcloud: comparative analysis between streamers, streaming categories
 - Sentiment Analysis: pos/neg, toxisity, horniness, etc
+    - sentiment analysis graphing (average video)
 
 ## Could be both:
 - Analysis in relation to Streaming lifecycle: early, middle, end
@@ -66,10 +60,7 @@
 ## Other Ideas:
 - Guessing game of what streamer's data it is (like a chat frequency, or any other metric that I provided)
     - Video Hook: "이 스트리머는 {각종 흥미로운 통계 등}. 누구일까요?"
-- 스텔라이브 전부 있음: 스텔라이브 분석?
-    사장(강지) vs 직원
 - 버튜버 vs 캠방?
-- Phone viwer vs PC viewer?
 
 ## Future Ideas:
 - Streamer Bot (sort of)
