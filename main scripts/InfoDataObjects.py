@@ -100,9 +100,9 @@ class ChatInfo(NamedTuple):
 class UserInfo(NamedTuple):
     user_nickname: str
     user_channel_id: str
-    user_channel_description: str
-    user_follower_count: int
-    user_channel_type: str  # "STREAMING" or "NORMAL", plus maybe something else I haven't seen
+    user_channel_description: str | None = None
+    user_follower_count: int | None = None
+    user_channel_type: str | None = None  # "STREAMING" or "NORMAL", plus maybe something else I haven't seen
     
     def get_dict(self):
         return {

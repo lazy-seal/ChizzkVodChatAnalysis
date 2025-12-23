@@ -10,10 +10,14 @@ from InfoDataObjects import UserInfo, ChatInfo, VideoInfo
 class localChzzkDbConnection:
     """Context Manager for Database Connection"""
     def __init__(self, is_testing=False):
-        with open("Private\\private.json", "r", encoding="utf-8") as f: #@TODO make resource.json or other file to store private data
+        with open("Private\\private.json", "r", encoding="utf-8") as f:
             f_json = json.load(f)
             dbpassword = f_json['dbpassword']
-        self.conn = psycopg2.connect(host="localhost", database="ChzzkChats", user="postgres", password=dbpassword, port=5432)
+        self.conn = psycopg2.connect(host="localhost", 
+                                     database="ChzzkChats" if not is_testing else "ChzzkTesting", 
+                                     user="postgres", 
+                                     password=dbpassword, 
+                                     port=5432)
         self.cur = self.conn.cursor()
         self.is_testing = is_testing
     
@@ -26,8 +30,8 @@ class localChzzkDbConnection:
     @print_func_when_called(True)
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """Commits (iff not testing) and closes connection and cursor"""
-        if not self.is_testing:
-            self.conn.commit()
+        # if not self.is_testing:
+        self.conn.commit()
         self.cur.close()
         self.conn.close()
         

@@ -43,9 +43,9 @@ def print_func_when_called(show_args=False):
             print(f"(CALLED): {func.__qualname__}")
             if show_args:
                 if args:
-                    print(f"\t(ARGS): {args!r}")
+                    pprint(f"\t(ARGS): {args!r}")
                 if kwargs:
-                    print(f"\t(KWARGS): {kwargs!r}")
+                    pprint(f"\t(KWARGS): {kwargs!r}")
             return func(*args, **kwargs)
         return wrapper
     return decorator

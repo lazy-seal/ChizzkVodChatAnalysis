@@ -1,6 +1,7 @@
 # TODO implementation:
 - implement:
-    - complete testing
+    - Continue Debugging testing
+        - "TypeError: tuple indices must be integers or slices, not str"
     - instead of doing api call for each and every user, I should just use the info given by chat data
     - Error handling:
         - api call timout
