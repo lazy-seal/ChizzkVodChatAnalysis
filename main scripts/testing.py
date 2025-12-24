@@ -14,8 +14,7 @@ if __name__ == "__main__":
     with open("TEST\\test_videos.csv", "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            videos.append(VideoInfo(**row)) # type: ignore # Since Video Info is exactly same as the csv I have
-    
+            videos.append(VideoInfo(**row)) # type: ignore # Since Video Info is exactly same as the csv I have 
         
     with localChzzkDbConnection(True) as chzzk_db:
         # (WARNING) below sql will drop all table: WARNING
@@ -27,10 +26,11 @@ if __name__ == "__main__":
             chzzk_db.insert_info(streamer)
             chzzk_db.insert_info(video)     # this can be called as soon as I get the VideoInfo object
             
-            with open(f"TEST\\{video.video_streamer_name}_{video.video_streamer_channel_id}_chats.csv", 'r', encoding="utf-8") as f:
+            with open(f"TEST\\{video.video_streamer_name}_{video.video_number}_chats.csv", 'r', encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    chzzk_db.insert_info(ChatInfo(**row)) # type: ignore
+                    chzzk_db.insert_info(ChatInfo(**row, chat_video_id=video.video_number)) # type: ignore
+                    
                     
     
             

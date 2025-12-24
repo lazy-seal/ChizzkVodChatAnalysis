@@ -1,5 +1,6 @@
 # TODO implementation:
 - implement:
+    - InfoDataObjects Refactoring to match with videos
     - Continue Debugging testing
         - "TypeError: tuple indices must be integers or slices, not str"
     - instead of doing api call for each and every user, I should just use the info given by chat data

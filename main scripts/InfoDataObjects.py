@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import NamedTuple
 from pprint import pprint
+import ast
 
 class CHZZK_URL:
     def __init__(self):
@@ -71,7 +72,7 @@ class VideoInfo(NamedTuple):
             "video_number"              : self.video_number,
             "video_title"               : self.video_title,
             "video_duration"            : self.video_duration,
-            "video_tags"                : self.video_tags, 
+            "video_tags"                : ast.literal_eval(self.video_tags),    # this might become a source of bug because I did not turn it into list for long into developing process
             "video_category_type"       : self.video_category_type,
             "video_category"            : self.video_category,
             "video_publish_date"        : self.video_publish_date
@@ -85,6 +86,7 @@ class ChatInfo(NamedTuple):
     chat_message_type_code: int
     chat_donation_amount: int
     chat_extras: str
+    chat_video_id: int | None = None
     
     def get_dict(self):
         return {
@@ -94,7 +96,8 @@ class ChatInfo(NamedTuple):
             "chat_content"              : self.chat_content,
             "chat_message_type_code"    : self.chat_message_type_code,
             "chat_donation_amount"      : self.chat_donation_amount,
-            "chat_extras"               : self.chat_extras
+            "chat_extras"               : self.chat_extras,
+            "chat_video_id"             : self.chat_video_id,
         }
 
 class UserInfo(NamedTuple):

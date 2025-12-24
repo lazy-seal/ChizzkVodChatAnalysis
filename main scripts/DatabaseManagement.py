@@ -64,24 +64,31 @@ class localChzzkDbConnection:
         
         match info:
             case ChatInfo():
-                self.cur.execute("INSERT INTO chats VALUES \
-                        (%(chat_user_nickname)s, \
-                        %(chat_user_channel_id)s, \
-                        %(chat_message_time)s, \
-                        %(chat_content)s, \
-                        %(chat_message_type_code)s, \
-                        %(chat_donation_amount)s, \
-                        %(chat_extras)s)",
+                self.cur.execute("""INSERT INTO chats (
+                    chat_user_id,
+                    chat_video_id,
+                    chat_message_time,
+                    chat_content,
+                    chat_message_type_code,
+                    chat_donation_amount,
+                    chat_extras 
+                    )VALUES(
+                        %(chat_user_channel_id)s, 
+                        %(chat_video_id)s, 
+                        %(chat_message_time)s, 
+                        %(chat_content)s, 
+                        %(chat_message_type_code)s, 
+                        %(chat_donation_amount)s,
+                        %(chat_extras)s)""",
                     info.get_dict()
-                    )
+                )
             case UserInfo():
-                self.cur.execute("INSERT INTO users VALUES (%(user_id)s, %(user_nickname)s)", 
+                self.cur.execute("INSERT INTO users VALUES (%s, %s)", 
                     (info.user_channel_id, info.user_nickname))
             case VideoInfo():
                 self.cur.execute("INSERT INTO videos VALUES \
-                        (%(video_streamer_name)s, \
+                        (%(video_number)s, \
                         %(video_streamer_channel_id)s, \
-                        %(video_number)s, \
                         %(video_title)s, \
                         %(video_duration)s, \
                         %(video_tags)s, \
