@@ -20,7 +20,7 @@ CREATE TABLE videos(
 );
 
 CREATE TABLE chats(
-	chat_id SERIAL PRIMARY KEY,
+	chat_chat_id SERIAL PRIMARY KEY,
 	chat_user_id TEXT REFERENCES users(user_id) NOT NULL,
 	chat_video_id INTEGER REFERENCES videos(video_id) NOT NULL,
 	chat_message_time INTEGER NOT NULL,

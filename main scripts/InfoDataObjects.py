@@ -51,13 +51,14 @@ class StreamerInfo(NamedTuple):
     streamer_nickname: str
     streamer_channel_id: str
 
-class VideoInfo(NamedTuple):
+@dataclass
+class VideoInfo():  
     video_streamer_name: str
     video_streamer_channel_id: str
     video_number: int
     video_title: str
     video_duration: int
-    video_tags: str     # this is in "['a1', 'b3', 'c2']" format
+    video_tags: list[str] 
     video_category_type: str
     video_category: str
     video_publish_date: str
@@ -66,26 +67,28 @@ class VideoInfo(NamedTuple):
     # video_active_user_count: int
     
     def get_dict(self):
+        print(type(self.video_tags))
         return {
             "video_streamer_name"   : self.video_streamer_name,
             "video_streamer_channel_id" : self.video_streamer_channel_id,
             "video_number"              : self.video_number,
             "video_title"               : self.video_title,
             "video_duration"            : self.video_duration,
-            "video_tags"                : ast.literal_eval(self.video_tags),    # this might become a source of bug because I did not turn it into list for long into developing process
+            "video_tags"                : self.video_tags,
             "video_category_type"       : self.video_category_type,
             "video_category"            : self.video_category,
             "video_publish_date"        : self.video_publish_date
         }
     
-class ChatInfo(NamedTuple):
+@dataclass
+class ChatInfo():
     chat_user_nickname: str
     chat_user_channel_id: str
     chat_message_time: int
-    chat_content: int
+    chat_content: str
     chat_message_type_code: int
-    chat_donation_amount: int
     chat_extras: str
+    chat_donation_amount: int = 0
     chat_video_id: int | None = None
     
     def get_dict(self):
@@ -100,7 +103,8 @@ class ChatInfo(NamedTuple):
             "chat_video_id"             : self.chat_video_id,
         }
 
-class UserInfo(NamedTuple):
+@dataclass
+class UserInfo():
     user_nickname: str
     user_channel_id: str
     user_channel_description: str | None = None

@@ -1,4 +1,5 @@
 import psycopg2
+from pprint import pprint
 # import asyncpg
 import datetime
 import json
@@ -27,7 +28,7 @@ class localChzzkDbConnection:
     def __enter__(self):
         return self
     
-    @print_func_when_called(True)
+    @print_func_when_called()
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """Commits (iff not testing) and closes connection and cursor"""
         # if not self.is_testing:
@@ -61,7 +62,7 @@ class localChzzkDbConnection:
         if self.exists_in_db(info):
             print(f"The info already exists: {info}")
             return
-        
+        pprint(info) 
         match info:
             case ChatInfo():
                 self.cur.execute("""INSERT INTO chats (
