@@ -20,8 +20,8 @@ CREATE TABLE videos(
 );
 
 CREATE TABLE chats(
-	chat_chat_id SERIAL PRIMARY KEY,
-	chat_user_id TEXT REFERENCES users(user_id) NOT NULL,
+	chat_id SERIAL PRIMARY KEY,
+	chat_user_id TEXT REFERENCES users(user_id) NOT NULL, -- There is a case in which this is just empty string, this is the anonymous donation or System Message?
 	chat_video_id INTEGER REFERENCES videos(video_id) NOT NULL,
 	chat_message_time INTEGER NOT NULL,
 	chat_content TEXT NOT NULL,

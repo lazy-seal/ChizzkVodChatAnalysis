@@ -36,6 +36,7 @@ def main():
                     # create chat user and put it into db
                     # create chatinfo and put it into db
                     # the order should be followed to follow foreign key constraint
+                    # if chat is anonymous, don't put it?
                     chat_user = UserInfo(row['chat_user_nickname'], row['chat_user_channel_id'])
                     chzzk_db.insert_info(chat_user)
                     

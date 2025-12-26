@@ -8,12 +8,6 @@ import asyncio
 import pandas as pd
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER
 
-# I don't really need a lock on async processes?
-# I just need to make sure coroutine closes the file
-# when it suspends itself
-# users_csv_lock = asyncio.Lock()
-# streamers_csv_lock = asyncio.Lock()
-# videos_csv_lock = asyncio.Lock()
 
 with open("Private//private.json", encoding="utf-8") as f:
         private_file = json.load(f)

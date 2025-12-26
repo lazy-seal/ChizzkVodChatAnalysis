@@ -25,6 +25,7 @@ class localChzzkDbConnection:
     def __repr__(self):
         return "localChzzkDbConnection()"
    
+    @print_func_when_called()
     def __enter__(self):
         return self
     
@@ -62,7 +63,7 @@ class localChzzkDbConnection:
         if self.exists_in_db(info):
             print(f"The info already exists: {info}")
             return
-        pprint(info) 
+
         match info:
             case ChatInfo():
                 self.cur.execute("""INSERT INTO chats (
@@ -108,8 +109,19 @@ class localChzzkDbConnection:
                 video_active_user_count INTEGER
             And inserts them into corresponding video row
         """
-        raise NotImplementedError
+        if type(video_number) != int:
+            raise TypeError("The video_number has to be an integer")
+
+        # video_chat_count, chat_donation_amount
+        self.cur.execute("""SELECT 
+                            COUNT(*) AS video_chat_count, 
+                            COALESCE(SUM(chat_donation_amount)) AS video_total_donation_amount, 
+                            COUNT(DISTINCT chat_user_id) AS video_active_user_count
+                         FROM chats WHERE chat_video_id = %s""", (video_number,))
+        result = self.cur.fetchone()
+        pprint(result)
     
+
     @print_func_when_called()
     def execute_sql_script(self, file_path: Path):
         """executes sql script"""
@@ -134,4 +146,5 @@ if __name__ == "__main__":
     # @TODO study async postgreSQL methodology
     # @TODO chat
     # @TODO function to store a bunch of chat int db
-    
+    with localChzzkDbConnection(True) as db:
+        db.insert_statistics_for_vod(2)

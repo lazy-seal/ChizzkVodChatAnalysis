@@ -1,9 +1,6 @@
 # TODO implementation:
 - implement:
-    - InfoDataObjects Refactoring as well as Crawler.py
-    - Continue Debugging testing
-        - "TypeError: tuple indices must be integers or slices, not str"
-    - instead of doing api call for each and every user, I should just use the info given by chat data
+    - Finish insert video statistic method
     - Error handling:
         - api call timout
         - when no data was received: maybe return empty DataInfo namedtuple?
