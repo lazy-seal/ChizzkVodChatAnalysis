@@ -22,7 +22,7 @@ def main():
     with localChzzkDbConnection(True) as chzzk_db:
         # (WARNING) below sql will drop all table: WARNING
         chzzk_db.execute_sql_script(Path("sql scripts\\table_init.sql"))
-        
+
         # This for loop should be something I call, and should be concurrent
         for video in videos:
             streamer = UserInfo(video.video_streamer_name, video.video_streamer_channel_id)
@@ -30,6 +30,7 @@ def main():
             chzzk_db.insert_info(streamer)
             chzzk_db.insert_info(video)     # this can be called as soon as I get the VideoInfo object
             
+            # turn this into a function?
             with open(f"TEST\\{video.video_streamer_name}_{video.video_number}_chats.csv", 'r', encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
@@ -39,13 +40,15 @@ def main():
                     # if chat is anonymous, don't put it?
                     chat_user = UserInfo(row['chat_user_nickname'], row['chat_user_channel_id'])
                     chzzk_db.insert_info(chat_user)
-                    
-                    if row['chat_donation_amount'] == "":
+                    if not row['chat_donation_amount']:
                         row["chat_donation_amount"] = 0
                     row['chat_extras'] = json.dumps(row['chat_extras'].strip('\"'))
                     chat_info = ChatInfo(**row, chat_video_id=video.video_number) # type: ignore
                     
                     chzzk_db.insert_info(chat_info)
+           
+            # now that chat is inserted, I can add the video statistics 
+            chzzk_db.insert_statistics_for_vod(int(video.video_number))
 
 
 

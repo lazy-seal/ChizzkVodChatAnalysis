@@ -7,7 +7,6 @@ from pathlib import Path
 from Helpers import print_func_when_called
 from InfoDataObjects import UserInfo, ChatInfo, VideoInfo
 
-# make it Singleton?
 class localChzzkDbConnection:
     """Context Manager for Database Connection"""
     def __init__(self, is_testing=False):
@@ -40,7 +39,7 @@ class localChzzkDbConnection:
         if exc_type != None:
             print(f"Error Occured: {exc_type}, {exc_value}, {exc_traceback}")
     
-    @print_func_when_called()
+    # @print_func_when_called()
     def exists_in_db(self, info: ChatInfo | UserInfo | VideoInfo) -> bool:
         """Checks db to see if info (user, chat, vid) exists in db"""
         match info:
@@ -52,7 +51,7 @@ class localChzzkDbConnection:
                 self.cur.execute("SELECT * FROM videos WHERE video_id = %s", (info.video_number,))
         return len(self.cur.fetchall()) != 0
     
-    @print_func_when_called()
+    # @print_func_when_called()
     def insert_info(self, info: ChatInfo | UserInfo | VideoInfo):
         """
         Inserts the info to db
@@ -100,7 +99,7 @@ class localChzzkDbConnection:
                     info.get_dict()
                     )
           
-    @print_func_when_called()
+    # @print_func_when_called()
     def insert_statistics_for_vod(self, video_number: int):
         """
         	Performs query to find: 
@@ -112,17 +111,23 @@ class localChzzkDbConnection:
         if type(video_number) != int:
             raise TypeError("The video_number has to be an integer")
 
-        # video_chat_count, chat_donation_amount
+        # video_chat_count, video_total_donation_amount, video_active_user_count
+        # maybe I can make the below statement into a single one
         self.cur.execute("""SELECT 
                             COUNT(*) AS video_chat_count, 
                             COALESCE(SUM(chat_donation_amount)) AS video_total_donation_amount, 
                             COUNT(DISTINCT chat_user_id) AS video_active_user_count
                          FROM chats WHERE chat_video_id = %s""", (video_number,))
-        result = self.cur.fetchone()
-        pprint(result)
-    
+        video_chat_count, video_total_donation_amount, video_active_user_count = self.cur.fetchone() # type: ignore
+        self.cur.execute("""UPDATE videos
+                            SET video_chat_count = %s,
+                                video_total_donation_amount = %s,
+                                video_active_user_count = %s
+                            WHERE video_id = %s 
+                         """, (video_chat_count, video_total_donation_amount, video_active_user_count, video_number)
+                        )
 
-    @print_func_when_called()
+    # @print_func_when_called()
     def execute_sql_script(self, file_path: Path):
         """executes sql script"""
         with open(file_path, "r", encoding="utf-8") as f:
