@@ -1,6 +1,6 @@
 # TODO implementation:
 - implement:
-    - Finish insert video statistic method
+    - make direct connection from crawler to db
     - Error handling:
         - api call timout
         - when no data was received: maybe return empty DataInfo namedtuple?

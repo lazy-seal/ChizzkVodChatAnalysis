@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from Helpers import print_func_when_called
 from InfoDataObjects import UserInfo, ChatInfo, VideoInfo
+from Crawler import logger
 
 class localChzzkDbConnection:
     """Context Manager for Database Connection"""
@@ -60,7 +61,7 @@ class localChzzkDbConnection:
         so you don't have to call exists_in_db explicitly somehwere else.
         """
         if self.exists_in_db(info):
-            print(f"The info already exists: {info}")
+            # print(f"The info already exists: {info}")
             return
 
         match info:
@@ -98,6 +99,7 @@ class localChzzkDbConnection:
                         %(video_publish_date)s)", 
                     info.get_dict()
                     )
+        # logger.info(f"successfully inserted: {info}")
           
     # @print_func_when_called()
     def insert_statistics_for_vod(self, video_number: int):

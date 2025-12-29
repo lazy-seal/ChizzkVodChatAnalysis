@@ -67,7 +67,6 @@ class VideoInfo():
     # video_active_user_count: int
     
     def get_dict(self):
-        print(type(self.video_tags))
         return {
             "video_streamer_name"   : self.video_streamer_name,
             "video_streamer_channel_id" : self.video_streamer_channel_id,
