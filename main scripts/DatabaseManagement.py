@@ -53,16 +53,16 @@ class localChzzkDbConnection:
         return len(self.cur.fetchall()) != 0
     
     # @print_func_when_called()
-    def insert_info(self, info: ChatInfo | UserInfo | VideoInfo):
+    def insert_info(self, info: ChatInfo | UserInfo | VideoInfo) -> bool:
         """
-        Inserts the info to db
+        Inserts the info to db. Returns True if insert was successful, False otherwise.
         
-        This method checks if the info already exists in db,
+        This method **checks if the info already exists in db**,
         so you don't have to call exists_in_db explicitly somehwere else.
         """
         if self.exists_in_db(info):
             # print(f"The info already exists: {info}")
-            return
+            return False
 
         match info:
             case ChatInfo():
@@ -99,6 +99,7 @@ class localChzzkDbConnection:
                         %(video_publish_date)s)", 
                     info.get_dict()
                     )
+        return True
         # logger.info(f"successfully inserted: {info}")
           
     # @print_func_when_called()

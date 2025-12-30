@@ -51,7 +51,7 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     return user_info
 
 
-async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
+async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
     """Performs a api call to loads and returns a list of vod replay information of the streamer.
     
     Parameters:
@@ -79,7 +79,7 @@ async def load_video_info(client: httpx.AsyncClient, streamer_name, streamer_cha
     
     for video in res_json["content"]["data"]:
         video_info = VideoInfo(
-            video_streamer_name         = streamer_name,
+            video_streamer_name         = res_json['channel']['channelName'],
             video_streamer_channel_id   = streamer_channel_id,
             video_number                = int(video['videoNo']),
             video_title                 = video['videoTitle'].replace("\n", " "),

@@ -20,7 +20,7 @@ def main():
             row['video_tags'] = ast.literal_eval(row['video_tags'])
             videos.append(VideoInfo(**row)) # type: ignore # Since Video Info is exactly same as the csv I have 
         
-    with localChzzkDbConnection(True) as chzzk_db:
+    with localChzzkDbConnection(is_testing=True) as chzzk_db:
         # (WARNING) below sql will drop all table: WARNING
         chzzk_db.execute_sql_script(Path("sql scripts\\table_init.sql"))
 
@@ -36,6 +36,7 @@ def main():
             with open(f"Raw Data\\Chats\\{video.video_streamer_name}_{video.video_number}_chats.csv", 'r', encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 logger.info(f"Started inserting chat for {video}")
+                print(f"Started inserting chat for {video}")
                 for row in reader:
                     try:
                         # create chat user and put it into db
