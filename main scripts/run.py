@@ -35,7 +35,7 @@ async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.As
             break
         
         for chat in chats:
-            db.insert_info(chat)     # I want to turn this coroutine object
+            await db.insert_info(chat)     # I want to turn this coroutine object
 
         last_message_time = chats[-1].chat_message_time
         next_message_time = last_message_time + 1
@@ -60,17 +60,16 @@ async def main():
         all_videos = await get_video_lists(client, Path()) 
         
         async with asyncio.TaskGroup() as tg:
-            with localChzzkDbConnection(is_testing=True) as chzzkdb:
+            async with localChzzkDbConnection(is_testing=True) as chzzkdb:
                 for streamer_videos in all_videos:
                     if streamer_videos:
                         streamer = UserInfo(streamer_videos[0].video_streamer_name, streamer_videos[0].video_streamer_channel_id)
-                        chzzkdb.insert_info(streamer)
+                        await chzzkdb.insert_info(streamer)
                     for video_info in streamer_videos:
                         if chzzkdb.insert_info(video_info):
                             # logger.info("%s's vod: %d", s_name, video_number)
-                            tg.create_task(fetch_and_save_chats_to_db(chzzkdb, client, video_info, 10))
+                            await fetch_and_save_chats_to_db(chzzkdb, client, video_info, 10)
                     
-                        # total_n_messages += n_messages
     
 if __name__ == "__main__":
     # up to date as of 2025-12-04

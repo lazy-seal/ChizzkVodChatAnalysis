@@ -1,6 +1,6 @@
 import psycopg2
 from pprint import pprint
-# import asyncpg
+import asyncpg
 import datetime
 import json
 from pathlib import Path
@@ -11,101 +11,100 @@ from Crawler import logger
 class localChzzkDbConnection:
     """Context Manager for Database Connection"""
     def __init__(self, is_testing=False):
-        with open("Private\\private.json", "r", encoding="utf-8") as f:
-            f_json = json.load(f)
-            dbpassword = f_json['dbpassword']
-        self.conn = psycopg2.connect(host="localhost", 
-                                     database="ChzzkChats" if not is_testing else "ChzzkTesting", 
-                                     user="postgres", 
-                                     password=dbpassword, 
-                                     port=5432)
-        self.cur = self.conn.cursor()
+        self.pool : asyncpg.Pool = None # type: ignore
         self.is_testing = is_testing
     
     def __repr__(self):
         return "localChzzkDbConnection()"
    
     @print_func_when_called()
-    def __enter__(self):
+    async def __aenter__(self):
+        with open("Private\\private.json", "r", encoding="utf-8") as f:
+            f_json = json.load(f)
+            dbpassword = str(f_json['dbpassword'])
+        self.pool = await asyncpg.create_pool(host="localhost", 
+                                     database="ChzzkChats" if not self.is_testing else "ChzzkTesting", 
+                                     user="postgres", 
+                                     password=dbpassword, 
+                                     port=5432,
+                                     ssl=False,
+                                     min_size=10,
+                                     max_size=100)
+
         return self
     
     @print_func_when_called()
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    async def __aexit__(self, exc_type, exc_value, exc_traceback):
         """Commits (iff not testing) and closes connection and cursor"""
         # if not self.is_testing:
-        self.conn.commit()
-        self.cur.close()
-        self.conn.close()
+        if  self.pool:
+            await self.pool.close()
         
         if exc_type != None:
-            print(f"Error Occured: {exc_type}, {exc_value}, {exc_traceback}")
+            print(f"Error Occured: {exc_type}, {exc_value}")
     
     # @print_func_when_called()
-    def exists_in_db(self, info: ChatInfo | UserInfo | VideoInfo) -> bool:
+    async def exists_in_db(self, info: ChatInfo | UserInfo | VideoInfo) -> bool: # type: ignore
         """Checks db to see if info (user, chat, vid) exists in db"""
-        match info:
-            case ChatInfo():
-                return False
-            case UserInfo():
-                self.cur.execute("SELECT * FROM users WHERE user_id = %s", (info.user_channel_id,))
-            case VideoInfo():
-                self.cur.execute("SELECT * FROM videos WHERE video_id = %s", (info.video_number,))
-        return len(self.cur.fetchall()) != 0
+        async with self.pool.acquire() as con:
+            lookup_result = [] 
+            match info:
+                case ChatInfo():
+                    # I don't think this would be used.  
+                    # But I still should implement this
+                    # @TODO
+                    return False    # what determines if two chats are the same?
+                case UserInfo():
+                    lookup_result = await con.fetch("SELECT * FROM users WHERE user_id = $1", info.user_channel_id)
+                case VideoInfo():
+                    lookup_result = await con.fetch("SELECT * FROM videos WHERE video_id = $1", int(info.video_number))
+        
+        return len(lookup_result) != 0
+    
     
     # @print_func_when_called()
-    def insert_info(self, info: ChatInfo | UserInfo | VideoInfo) -> bool:
+    async def insert_info(self, info: ChatInfo | UserInfo | VideoInfo) -> bool:
         """
         Inserts the info to db. Returns True if insert was successful, False otherwise.
         
         This method **checks if the info already exists in db**,
         so you don't have to call exists_in_db explicitly somehwere else.
         """
-        if self.exists_in_db(info):
-            # print(f"The info already exists: {info}")
-            return False
+        async with self.pool.acquire() as con:
+            if await self.exists_in_db(info):
+                # print(f"The info already exists: {info}")
+                return False
 
-        match info:
-            case ChatInfo():
-                self.cur.execute("""INSERT INTO chats (
-                    chat_user_id,
-                    chat_video_id,
-                    chat_message_time,
-                    chat_content,
-                    chat_message_type_code,
-                    chat_donation_amount,
-                    chat_extras 
-                    )VALUES(
-                        %(chat_user_channel_id)s, 
-                        %(chat_video_id)s, 
-                        %(chat_message_time)s, 
-                        %(chat_content)s, 
-                        %(chat_message_type_code)s, 
-                        %(chat_donation_amount)s,
-                        %(chat_extras)s)""",
-                    info.get_dict()
-                )
-            case UserInfo():
-                self.cur.execute("INSERT INTO users VALUES (%s, %s)", 
-                    (info.user_channel_id, info.user_nickname))
-            case VideoInfo():
-                self.cur.execute("INSERT INTO videos VALUES \
-                        (%(video_number)s, \
-                        %(video_streamer_channel_id)s, \
-                        %(video_title)s, \
-                        %(video_duration)s, \
-                        %(video_tags)s, \
-                        %(video_category_type)s, \
-                        %(video_category)s, \
-                        %(video_publish_date)s)", 
-                    info.get_dict()
+            match info:
+                case ChatInfo():
+                    to_store = info.to_store_in_db()
+                    await con.execute("""INSERT INTO chats (
+                        chat_user_id,
+                        chat_video_id,
+                        chat_message_time,
+                        chat_content,
+                        chat_message_type_code,
+                        chat_donation_amount,
+                        chat_extras 
+                        )VALUES($1, $2, $3, $4, $5, $6, $7)""",
+                        *to_store
                     )
+                case UserInfo():
+                    await con.execute("INSERT INTO users VALUES ($1, $2)", 
+                        info.user_channel_id, info.user_nickname)
+                case VideoInfo():
+                    to_store = info.to_store_in_db()
+                    await con.execute("INSERT INTO videos VALUES \
+                            ($1, $2, $3, $4, $5, $6, $7, $8)", 
+                            *to_store
+                        )
         return True
         # logger.info(f"successfully inserted: {info}")
-          
+              
     # @print_func_when_called()
-    def insert_statistics_for_vod(self, video_number: int):
+    async def insert_statistics_for_vod(self, video_number: int):
         """
-        	Performs query to find: 
+            Performs query to find: 
                 video_chat_count, 
                 video_total_donation_amount, 
                 video_active_user_count INTEGER
@@ -114,29 +113,35 @@ class localChzzkDbConnection:
         if type(video_number) != int:
             raise TypeError("The video_number has to be an integer")
 
-        # video_chat_count, video_total_donation_amount, video_active_user_count
-        # maybe I can make the below statement into a single one
-        self.cur.execute("""SELECT 
-                            COUNT(*) AS video_chat_count, 
-                            COALESCE(SUM(chat_donation_amount)) AS video_total_donation_amount, 
-                            COUNT(DISTINCT chat_user_id) AS video_active_user_count
-                         FROM chats WHERE chat_video_id = %s""", (video_number,))
-        video_chat_count, video_total_donation_amount, video_active_user_count = self.cur.fetchone() # type: ignore
-        self.cur.execute("""UPDATE videos
-                            SET video_chat_count = %s,
-                                video_total_donation_amount = %s,
-                                video_active_user_count = %s
-                            WHERE video_id = %s 
-                         """, (video_chat_count, video_total_donation_amount, video_active_user_count, video_number)
-                        )
+        async with self.pool.acquire() as con:
+            # video_chat_count, video_total_donation_amount, video_active_user_count
+            # maybe I can make the below statement into a single one
+            result = await con.fetch("""SELECT 
+                                COUNT(*) AS video_chat_count, 
+                                COALESCE(SUM(chat_donation_amount)) AS video_total_donation_amount, 
+                                COUNT(DISTINCT chat_user_id) AS video_active_user_count
+                             FROM chats WHERE chat_video_id = $1""", video_number)
+            video_chat_count, video_total_donation_amount, video_active_user_count = result[0][0], result[0][1], result[0][2] 
+            await con.execute("""UPDATE videos
+                                SET video_chat_count = $1,
+                                    video_total_donation_amount = $2,
+                                    video_active_user_count = $3 
+                                WHERE video_id = $4 
+                             """, video_chat_count, video_total_donation_amount, video_active_user_count, video_number
+                            )
 
-    # @print_func_when_called()
-    def execute_sql_script(self, file_path: Path):
+    # this function should be gone
+    # replace it by: initialize db or something
+    @print_func_when_called()
+    async def execute_sql_script(self, file_path: Path):
         """executes sql script"""
         with open(file_path, "r", encoding="utf-8") as f:
             script = f.read()
-            self.cur.execute(script)
+            async with self.pool.acquire() as con:
+                await con.execute(script)
             
+    # I abstracted out the sql statement from the crawler and db manage
+    # db manager will execute pre-written queries only and provide functionality
     # @print_func_when_called(True)
     # def execute_sql_statement(self, statement: str):
     #     """executes sql statement"""
@@ -151,8 +156,4 @@ if __name__ == "__main__":
     
     Use the streamer's id to create video_streamer_id
     """
-    # @TODO study async postgreSQL methodology
-    # @TODO chat
-    # @TODO function to store a bunch of chat int db
-    with localChzzkDbConnection(True) as db:
-        db.insert_statistics_for_vod(2)
+    pass

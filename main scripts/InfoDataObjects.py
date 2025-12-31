@@ -3,6 +3,8 @@ from typing import NamedTuple
 from pprint import pprint
 import ast
 
+# @TODO make abstract base class for infodataobject
+
 class CHZZK_URL:
     def __init__(self):
         pass
@@ -79,6 +81,16 @@ class VideoInfo():
             "video_publish_date"        : self.video_publish_date
         }
     
+    def to_store_in_db(self):
+        return int(self.video_number), \
+            str(self.video_streamer_channel_id), \
+            str(self.video_title), \
+            int(self.video_duration), \
+            self.video_tags, \
+            str(self.video_category_type), \
+            str(self.video_category), \
+            str(self.video_publish_date)
+    
 @dataclass
 class ChatInfo():
     chat_user_nickname: str
@@ -88,19 +100,28 @@ class ChatInfo():
     chat_message_type_code: int
     chat_extras: str
     chat_donation_amount: int = 0
-    chat_video_id: int | None = None
+    chat_video_id: int = 0
     
     def get_dict(self):
         return {
-            "chat_user_nickname"        : self.chat_user_nickname,
             "chat_user_channel_id"      : self.chat_user_channel_id,
+            "chat_video_id"             : self.chat_video_id,
+            "chat_user_nickname"        : self.chat_user_nickname,
             "chat_message_time"         : self.chat_message_time,
             "chat_content"              : self.chat_content,
             "chat_message_type_code"    : self.chat_message_type_code,
             "chat_donation_amount"      : self.chat_donation_amount,
             "chat_extras"               : self.chat_extras,
-            "chat_video_id"             : self.chat_video_id,
         }
+    
+    def to_store_in_db(self):
+        return str(self.chat_user_channel_id), \
+            int(self.chat_video_id), \
+            int(self.chat_message_time), \
+            self.chat_content, \
+            int(self.chat_message_type_code), \
+            int(self.chat_donation_amount), \
+            self.chat_extras
 
 @dataclass
 class UserInfo():

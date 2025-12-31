@@ -1,12 +1,9 @@
 # TODO implementation:
 - implement:
-    - make direct connection from crawler to db
+    - make bulk chat inserts by copy records
     - Error handling:
         - api call timout
         - when no data was received: maybe return empty DataInfo namedtuple?
-    - run.py
-        - (db) while going through chat, count how many chat, donation, and active users are in the video
-    - eventaully figure out way to move the data directly from api to db (without csv in the middle)
 - centeralize api urls to InfoDataObjects.py (or should I?)
 
 # TODO Ideas for Data anyalysis
