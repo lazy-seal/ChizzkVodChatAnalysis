@@ -7,6 +7,9 @@ from pathlib import Path
 from Helpers import print_func_when_called
 from InfoDataObjects import UserInfo, ChatInfo, VideoInfo
 from Crawler import logger
+from collections.abc import Iterable
+import asyncio
+
 
 class localChzzkDbConnection:
     """Context Manager for Database Connection"""
@@ -38,8 +41,10 @@ class localChzzkDbConnection:
         """Commits (iff not testing) and closes connection and cursor"""
         # if not self.is_testing:
         if  self.pool:
-            await self.pool.close()
-        
+            print('start closing connections')
+            await asyncio.wait_for(self.pool.close(), timeout=5.0)
+            print('pool closed')
+             
         if exc_type != None:
             print(f"Error Occured: {exc_type}, {exc_value}")
     
@@ -63,45 +68,56 @@ class localChzzkDbConnection:
     
     
     # @print_func_when_called()
-    async def insert_info(self, info: ChatInfo | UserInfo | VideoInfo) -> bool:
+    async def insert_info(self, info_list: Iterable[ChatInfo] | Iterable[UserInfo] | Iterable[VideoInfo]) -> bool:
         """
         Inserts the info to db. Returns True if insert was successful, False otherwise.
         
-        This method **checks if the info already exists in db**,
-        so you don't have to call exists_in_db explicitly somehwere else.
+        This method **does not check if the info already exists in db**,
+        but accomadates it by creating a temperary table and left-joining it to the
+        actual db
         """
-        async with self.pool.acquire() as con:
-            if await self.exists_in_db(info):
-                # print(f"The info already exists: {info}")
-                return False
+        match info_list:
+            case [ChatInfo(), *_]:
+                records = [info.to_store_in_db() for info in info_list]
+                query = """
+                    INSERT INTO chats (
+                        chat_user_id, chat_video_id, chat_message_time,
+                        chat_content, chat_message_type_code,
+                        chat_donation_amount, chat_extras
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                """
+                await self.pool.executemany(query, records)
+            case [UserInfo(), *_]:
+                records = [(info.user_channel_id, info.user_nickname) for info in info_list]
+                query = """
+                    INSERT INTO users (user_id, user_nickname)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO NOTHING
+                """
+                await self.pool.executemany(query, records)
+            case [VideoInfo(), *_]:
+                records = [info.to_store_in_db() for info in info_list]
+                query = """
+                    INSERT INTO videos (
+                        video_id,
+                        video_streamer_id,
+                        video_title,
+                        video_duration,
+                        video_tags,
+                        video_category_type,
+                        video_category,
+                        video_publish_date
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ON CONFLICT (video_id) DO NOTHING
+                """
+                await self.pool.executemany(query, records)
+            case _:
+                raise TypeError(f"wrong input format: {type(info_list)} for {info_list}")
 
-            match info:
-                case ChatInfo():
-                    to_store = info.to_store_in_db()
-                    await con.execute("""INSERT INTO chats (
-                        chat_user_id,
-                        chat_video_id,
-                        chat_message_time,
-                        chat_content,
-                        chat_message_type_code,
-                        chat_donation_amount,
-                        chat_extras 
-                        )VALUES($1, $2, $3, $4, $5, $6, $7)""",
-                        *to_store
-                    )
-                case UserInfo():
-                    await con.execute("INSERT INTO users VALUES ($1, $2)", 
-                        info.user_channel_id, info.user_nickname)
-                case VideoInfo():
-                    to_store = info.to_store_in_db()
-                    await con.execute("INSERT INTO videos VALUES \
-                            ($1, $2, $3, $4, $5, $6, $7, $8)", 
-                            *to_store
-                        )
         return True
         # logger.info(f"successfully inserted: {info}")
               
-    # @print_func_when_called()
+    # @print_func_when_called(True)
     async def insert_statistics_for_vod(self, video_number: int):
         """
             Performs query to find: 

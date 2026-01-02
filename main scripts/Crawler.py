@@ -1,4 +1,5 @@
 import json
+import ast
 import csv
 from pathlib import Path
 import logging
@@ -16,6 +17,7 @@ with open("Private//private.json", encoding="utf-8") as f:
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
     """
@@ -77,9 +79,11 @@ async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, n_vide
     
     res_json = res.json()
     
+    # logger.info(res_json)
+    # pprint(res_json)
     for video in res_json["content"]["data"]:
         video_info = VideoInfo(
-            video_streamer_name         = res_json['channel']['channelName'],
+            video_streamer_name         = video['channel']['channelName'],
             video_streamer_channel_id   = streamer_channel_id,
             video_number                = int(video['videoNo']),
             video_title                 = video['videoTitle'].replace("\n", " "),
@@ -93,7 +97,7 @@ async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, n_vide
     # random.shuffle(self.vod_numbers)
     return vods
 
-async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_time: int) -> list[ChatInfo]:
+async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, message_time: int) -> tuple[list[ChatInfo], set[UserInfo]]:
     """Performs an api request to chzzk web api, returns results of the request
     
     Parameters:
@@ -118,13 +122,14 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
             30: System Message: "이모티콘 전용 모드 해제"
     """
     url = f"https://api.chzzk.naver.com/service/v1/videos/{video_number}/chats?playerMessageTime={message_time}"
-    response = await client.get(url=url, headers=HEADERS)
+    response = await client.get(url=url, headers=HEADERS, timeout=500)
     res_json = response.json()
     chats: list[ChatInfo] = []
+    users: set[UserInfo] = set()
     
     if response.status_code != 200 or len(res_json['content']['videoChats']) == 0:
         logger.info("Fetch Finished on vid %d: status_code: %d", video_number, response.status_code)
-        return []
+        return [], set() 
 
     for chat in res_json['content']['videoChats']:
         try:
@@ -135,10 +140,10 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
             chat_user_nickname      = "" if not profile else profile['nickname']
             chat_user_channel_id    = "" if not profile else profile['userIdHash']
             chat_message_time       = int(chat['playerMessageTime'])
-            chat_content            = '\"' + chat['content'].replace("\n", " ") + '\"'  # adds \" to make sure  comma on chat won't affect csv formatting
+            chat_content            = '\"' + chat['content'].replace("\n", " ").replace('\x00', "") + '\"'  # adds \" to make sure  comma on chat won't affect csv formatting
             chat_message_type_code  = int(chat['messageTypeCode'])
             chat_donation_amount    = 0 if chat['messageTypeCode'] != 10 else int(extras['payAmount']) # type: ignore -> payAmount will always be integer if the message type is donation
-            chat_extras             = "" if not chat['extras'] else '\"' + chat['extras'].replace("\n", " ") + '\"'    # same reason to add \"
+            chat_extras             = "" if not chat['extras'] else json.dumps(chat['extras'].replace("\n", " "))  # same reason to add \"
             
             if chat['messageTypeCode'] == 10:
                 chat_donation_amount = int(extras['payAmount']) # type: ignore
@@ -151,11 +156,14 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
 
             chat_info = ChatInfo(chat_user_nickname     = chat_user_nickname,
                                 chat_user_channel_id    = chat_user_channel_id,
+                                chat_video_id           = video_number,
                                 chat_message_time       = chat_message_time,
                                 chat_content            = chat_content,
                                 chat_message_type_code  = chat_message_type_code,
                                 chat_donation_amount    = chat_donation_amount,
                                 chat_extras             = chat_extras)
+            user_info = UserInfo(chat_user_nickname, chat_user_channel_id)
+            users.add(user_info)
             chats.append(chat_info)
             
         except KeyError as ke:
@@ -163,7 +171,7 @@ async def load_chat_data(client: httpx.AsyncClient, video_number: int, message_t
             for k, v in chat.items():
                 logger.info("%s: %s", k, v)
                 
-    return chats
+    return chats, users
 
 
 def save_video_info_to_csv(video_info: VideoInfo):

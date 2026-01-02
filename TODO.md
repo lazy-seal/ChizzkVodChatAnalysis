@@ -1,14 +1,17 @@
 # TODO implementation:
 - implement:
-    - make bulk chat inserts by copy records
+    - Go over comments and docstrings: update them
+    - make init.py
+    - extract "extra" to save space?
+        - at least erase the ones I don't need like tokens and stuff
+    - db to csv, https to csv
+    - Update Testing.py 
     - Error handling:
-        - api call timout
-        - when no data was received: maybe return empty DataInfo namedtuple?
-- centeralize api urls to InfoDataObjects.py (or should I?)
+        - when no data was received 
+    - centeralize api urls to InfoDataObjects.py (or should I?)
 
 # TODO Ideas for Data anyalysis
 ## Doesn't need Pre-Processing
-- Engagement metrics: follower count to average chatting user (video전체 시청자 수를 알아낼 수가 없다) ratio, messages per minute, 스트리머별 가장 '핫'한 다시보기 등
     - Getting releavant information for individual videos:
     ```SQL
     SELECT video_chat_count, video_user_count, video_duration FROM videos
@@ -36,9 +39,7 @@
     FROM users, streamer
     ```
 - Graph on chat frequency during the timeline of the video (chat frequency analysis)
-    - chat.chat_message_time을 1~5분 단위로 묶어서 video_duration을 기준으로 그래프
 - Chat rate per user (within the people who actually chat)
-- 시청자-specific metrics:
     - The "Superfans" who chatted most in the stream
     - how many users chat in different streams
 - category/tag specific metrics:
@@ -55,8 +56,6 @@
 
 ## Other Ideas:
 - Guessing game of what streamer's data it is (like a chat frequency, or any other metric that I provided)
-    - Video Hook: "이 스트리머는 {각종 흥미로운 통계 등}. 누구일까요?"
-- 버튜버 vs 캠방?
 
 ## Future Ideas:
 - Streamer Bot (sort of)

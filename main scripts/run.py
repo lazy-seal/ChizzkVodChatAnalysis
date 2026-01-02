@@ -1,4 +1,4 @@
-from Crawler import logger, load_video_info, load_chat_data, save_vod_chats_to_csv, save_video_info_to_csv
+from Crawler import logger, load_video_info, load_chat_and_user_data, save_vod_chats_to_csv, save_video_info_to_csv
 from DatabaseManagement import localChzzkDbConnection
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
 from pathlib import Path
@@ -9,71 +9,95 @@ import asyncio
 import httpx
 from pprint import pprint
 
-async def fetch_and_save_chats_to_csv(client: httpx.AsyncClient, video_info: VideoInfo, api_request_limit: int = 5000):
-    next_message_time           = 0
-    video_number                = video_info.video_number
-    streamer_name               = video_info.video_streamer_name
+# async def fetch_and_save_chats_to_csv(client: httpx.AsyncClient, video_info: VideoInfo, api_request_limit: int = 5000):
+#     next_message_time           = 0
+#     video_number                = video_info.video_number
+#     streamer_name               = video_info.video_streamer_name
     
-    for _ in range(api_request_limit):
-        chats = await load_chat_data(client, video_number, next_message_time)
+#     for _ in range(api_request_limit):
+#         chats, _ = await load_chat_and_user_data(client, video_number, next_message_time)
         
-        if not chats:       # consider changing this to a while loop condition? But that means I have to start with chat being some sort of true value before the loop, I don't like that.
-            break
+#         if not chats:       
+#             break
         
-        save_vod_chats_to_csv(streamer_name, video_number, chats)
-        last_message_time = chats[-1].chat_message_time
-        next_message_time = last_message_time + 1
+#         save_vod_chats_to_csv(streamer_name, video_number, chats)
+#         last_message_time = chats[-1].chat_message_time
+#         next_message_time = last_message_time + 1
 
-async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.AsyncClient, video_info: VideoInfo, api_request_limit: int = 5000): 
-    next_message_time           = 0
-    video_number                = video_info.video_number
+async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.AsyncClient, video_number: int, api_request_limit: int = 5000): 
+    async def insert_user_and_chats_to_db(users, chats):
+        await db.insert_info(sorted(users))     # sort names to prevent deadlock condition
+        await db.insert_info(chats)     
+
+    next_message_time   = 0 
+    starttime           = time.time()
     
-    for _ in range(api_request_limit):
-        chats = await load_chat_data(client, video_number, next_message_time)
-        
-        if not chats:       # consider changing this to a while loop condition? But that means I have to start with chat being some sort of true value before the loop, I don't like that.
-            break
-        
-        for chat in chats:
-            await db.insert_info(chat)     # I want to turn this coroutine object
+    logger.info("Fetch Started on vod: %d", video_number)
 
-        last_message_time = chats[-1].chat_message_time
-        next_message_time = last_message_time + 1
+    async with asyncio.TaskGroup() as tg: 
+        for _ in range(api_request_limit):
+            chats, users = await load_chat_and_user_data(client, video_number, next_message_time)
+            
+            if not chats:      
+                elapsed = time.time() - starttime
+                logger.info(f"{video_number} download took {int(elapsed) // 60}m {int(elapsed % 60)}s")
+                break
+            
+            tg.create_task(insert_user_and_chats_to_db(users, chats))
+
+            last_message_time = chats[-1].chat_message_time
+            next_message_time = last_message_time + 1
+
+    elapsed = time.time() - starttime
+    logger.info(f"{video_number} db write took {int(elapsed) // 60}m {int(elapsed % 60)}s")
 
 
-async def get_video_lists(client: httpx.AsyncClient, path: Path):
+async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get: int = 50):
     """given path to the files to the streamers, return lists of VideoInfo"""
     video_tasks = []
-    with open(f"Raw Data\\streamers.csv", "r", encoding="utf-8") as f:
+    with open(f"Raw Data\\all_verified_streamers.csv", "r", encoding="utf-8") as f:
         csv_reader = csv.DictReader(f)
         async with asyncio.TaskGroup() as tg:
             for row in csv_reader:
-                s_channel_id    = row[0]
-                task = tg.create_task(load_video_info(client, s_channel_id, 2))
+                s_channel_id    = row['channel_id']
+                task = tg.create_task(load_video_info(client, s_channel_id, n_videos_to_get))
                 video_tasks.append(task)
+                break
     return [task.result() for task in video_tasks]
 
 async def main():
-    all_videos : list[list[VideoInfo]] = []
-    
-    async with httpx.AsyncClient() as client:
-        all_videos = await get_video_lists(client, Path()) 
-        
-        async with asyncio.TaskGroup() as tg:
-            async with localChzzkDbConnection(is_testing=True) as chzzkdb:
-                for streamer_videos in all_videos:
+    all_videos_per_streamer : list[list[VideoInfo]] = []    # list of streamers' list of videos: Each sublist is list of VideoInfo from the same streamer 
+    is_testing = True
+     
+    async with localChzzkDbConnection(is_testing) as chzzkdb:
+        async with httpx.AsyncClient() as client:
+            all_videos_per_streamer = await get_video_lists(client, Path(), 50 if is_testing else 50) 
+
+            if chzzkdb.is_testing: # reset database if I'm testing
+                await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
+
+            async with asyncio.TaskGroup() as tg:
+                for streamer_videos in all_videos_per_streamer:
                     if streamer_videos:
-                        streamer = UserInfo(streamer_videos[0].video_streamer_name, streamer_videos[0].video_streamer_channel_id)
-                        await chzzkdb.insert_info(streamer)
+                        s_name = streamer_videos[0].video_streamer_name
+                        s_id = streamer_videos[0].video_streamer_channel_id
+                        streamer = UserInfo(s_name, s_id) 
+                        await chzzkdb.insert_info([streamer])
+                        await chzzkdb.insert_info(streamer_videos)
                     for video_info in streamer_videos:
-                        if chzzkdb.insert_info(video_info):
-                            # logger.info("%s's vod: %d", s_name, video_number)
-                            await fetch_and_save_chats_to_db(chzzkdb, client, video_info, 10)
-                    
+                        if await chzzkdb.insert_info([video_info]):
+                            video_number = video_info.video_number
+                            tg.create_task(fetch_and_save_chats_to_db(chzzkdb, client, video_number))
+            
+        # Create new taskgroup to make sure all relevant data for video are inserted
+        async with asyncio.TaskGroup() as tg:
+            for streamer_videos in all_videos_per_streamer:
+                for video_info in streamer_videos:
+                    tg.create_task(chzzkdb.insert_statistics_for_vod(video_info.video_number))
     
 if __name__ == "__main__":
-    # up to date as of 2025-12-04
-    # streamer_lists_update()
     st = time.time()
     asyncio.run(main())
-    print(time.time() - st)
+    elapsed = time.time() - st
+    print(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
+    logger.info(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")

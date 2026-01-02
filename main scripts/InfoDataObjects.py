@@ -139,6 +139,16 @@ class UserInfo():
             "user_follower_count": self.user_follower_count,
             "user_channel_type": self.user_channel_type
         }
+    
+    def __hash__(self):
+        return hash(self.user_channel_id)
+    
+    def __eq__(self, other):
+        return self.user_channel_id == other.user_channel_id
+    
+    def __lt__(self, other):
+        return self.user_channel_id < other.user_channel_id
+        
         
 if __name__ == "__main__":
     pprint(VideoInfo.__dict__)
