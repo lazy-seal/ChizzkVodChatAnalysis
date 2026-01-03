@@ -19,13 +19,19 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo:
+async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo | None:
     """
-    Description:
-        Makes asyncronuous http reqeust to Chzzk api to get user data based on their channel id
+    Sends http request to Chzzk api to get a relevant info of the user
     
-    Important:
-        This function raises ConnectionError when non-200 status code was returned by api call
+    Parameter:
+        client (httpx.AsyncClient): client to perform api request
+        user_channel_id (str): user-identifying id to send a request
+        
+    Returns:
+        UserInfo | None: returns fetched user_info, or None if the user is no longer available
+    
+    Raises:
+        ConnectionError if the user_request wasn't successful
     """
     url = f"https://api.chzzk.naver.com/service/v1/channels/{user_channel_id}"
     res = await client.get(url=url, headers=HEADERS)
@@ -35,12 +41,18 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     # 500/9002: "이 채널은 네이버 운영 정책을 위반하여 일시적으로 이용할 수 없습니다."
         # 채널 정지당한 계정
     
-    if res.status_code != 200:
-        raise ConnectionError(f"the api call was not successful:{res}")
-    
+    match res.status_code:
+        case 500 | 9002:    # "이 채널은 네이버 운영 정책을 위반하여 일시적으로 이용할 수 없습니다."
+            return None
+        case 200:
+            pass
+        case _:
+            raise ConnectionError(f"Fetching info not successful for user{user_channel_id}: {res}")
+
     content = res.json()['content']
     
-    if content['channelName'] == "(알 수 없음)":
+    if content['channelName'] == "(알 수 없음)":    # idk why i put this. I can't remember where I've seen this
+        logger.info(content)
         pprint(content)
     
     user_info = UserInfo(
@@ -54,8 +66,10 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
 
 
 async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
-    """Performs a api call to loads and returns a list of vod replay information of the streamer.
-    
+    """
+    Description:
+        Sends http request to Chzzk api to get a relevant info of the video
+ 
     Parameters:
         n_videos_to_load (int) : number of video information you want to request. \
             Maximum is 50 (enforced with ValueError). The api gives no response if greater than 50.
@@ -94,13 +108,15 @@ async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, n_vide
             video_publish_date          = video['publishDate']
         )
         vods.append(video_info)
-    # random.shuffle(self.vod_numbers)
     return vods
 
 async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, message_time: int) -> tuple[list[ChatInfo], set[UserInfo]]:
-    """Performs an api request to chzzk web api, returns results of the request
+    """
+    Description:
+        Sends http request to Chzzk api to get a relevant info of the chat within the given video within the given time (~200 chats each)
     
     Parameters:
+        client (httpx.AsyncClient): the client to perform http request
         video_number (int): video identification number unique to each replay.
         message_time (int): A timestamp within the video in which the api call will request chats. 
             Ex.: given 0, the function requests chats from the beginning of the video
@@ -140,7 +156,7 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
             chat_user_nickname      = "" if not profile else profile['nickname']
             chat_user_channel_id    = "" if not profile else profile['userIdHash']
             chat_message_time       = int(chat['playerMessageTime'])
-            chat_content            = '\"' + chat['content'].replace("\n", " ").replace('\x00', "") + '\"'  # adds \" to make sure  comma on chat won't affect csv formatting
+            chat_content            = '\"' + chat['content'].replace("\n", " ").replace('\x00', "") + '\"'  # newlines and nul value seem to appear somethimes
             chat_message_type_code  = int(chat['messageTypeCode'])
             chat_donation_amount    = 0 if chat['messageTypeCode'] != 10 else int(extras['payAmount']) # type: ignore -> payAmount will always be integer if the message type is donation
             chat_extras             = "" if not chat['extras'] else json.dumps(chat['extras'].replace("\n", " "))  # same reason to add \"
@@ -174,7 +190,7 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
     return chats, users
 
 
-def save_video_info_to_csv(video_info: VideoInfo):
+def write_video_info_to_csv(video_info: VideoInfo):
     """Saves specific loaded vods on csv file."""
     video_csv_path = Path("Raw Data\\videos.csv")
     
@@ -188,7 +204,7 @@ def save_video_info_to_csv(video_info: VideoInfo):
         csv_writer.writerow(video_info.get_dict())
 
 
-def save_vod_chats_to_csv(streamer_name: str, video_number: int, video_chats: list[ChatInfo]):
+def write_vod_chats_to_csv(streamer_name: str, video_number: int, video_chats: list[ChatInfo]):
     """Given streamer and vod chats, initializes (if necessary) and appends the chat to corresponding csv."""
     chat_csv_path = Path(f"Raw Data\\Chats\\{streamer_name}_{video_number}_chats.csv")
     
@@ -203,10 +219,7 @@ def save_vod_chats_to_csv(streamer_name: str, video_number: int, video_chats: li
             csv_writer.writerow(chat_info.get_dict())
 
 if __name__ == "__main__":
-    with open("TEST\\TEST.csv", "w", newline="", encoding="utf-8") as f:
-        csv_writer = csv.DictWriter(f, fieldnames=CHATS_CSV_HEADER)
-        csv_writer.writeheader()
-    
+    pass
     # what if the user in 1 stream appear in another stream? how do I get
     # index on the user name 
     # check user name if they exist

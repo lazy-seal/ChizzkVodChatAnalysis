@@ -1,4 +1,4 @@
-from Crawler import logger, load_video_info, load_chat_and_user_data, save_vod_chats_to_csv, save_video_info_to_csv
+from Crawler import logger, load_video_info, load_chat_and_user_data, write_vod_chats_to_csv, write_video_info_to_csv
 from DatabaseManagement import localChzzkDbConnection
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
 from pathlib import Path
@@ -9,22 +9,20 @@ import asyncio
 import httpx
 from pprint import pprint
 
-# async def fetch_and_save_chats_to_csv(client: httpx.AsyncClient, video_info: VideoInfo, api_request_limit: int = 5000):
-#     next_message_time           = 0
-#     video_number                = video_info.video_number
-#     streamer_name               = video_info.video_streamer_name
+async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.AsyncClient, 
+                                     video_number: int, api_request_limit: int = 5000): 
+    """
+    Saves all chats of the given video to database
     
-#     for _ in range(api_request_limit):
-#         chats, _ = await load_chat_and_user_data(client, video_number, next_message_time)
-        
-#         if not chats:       
-#             break
-        
-#         save_vod_chats_to_csv(streamer_name, video_number, chats)
-#         last_message_time = chats[-1].chat_message_time
-#         next_message_time = last_message_time + 1
-
-async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.AsyncClient, video_number: int, api_request_limit: int = 5000): 
+    :param db: 
+    :type db: localChzzkDbConnection
+    :param client: 
+    :type client: httpx.AsyncClient
+    :param video_number: video identification number
+    :type video_number: int
+    :param api_request_limit: maximum request limit (200 chats per request)
+    :type api_request_limit: int
+    """
     async def insert_user_and_chats_to_db(users, chats):
         await db.insert_info(sorted(users))     # sort names to prevent deadlock condition
         await db.insert_info(chats)     
@@ -55,7 +53,7 @@ async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.As
 async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get: int = 50):
     """given path to the files to the streamers, return lists of VideoInfo"""
     video_tasks = []
-    with open(f"Raw Data\\all_verified_streamers.csv", "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         csv_reader = csv.DictReader(f)
         async with asyncio.TaskGroup() as tg:
             for row in csv_reader:
@@ -68,12 +66,13 @@ async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get
 async def main():
     all_videos_per_streamer : list[list[VideoInfo]] = []    # list of streamers' list of videos: Each sublist is list of VideoInfo from the same streamer 
     is_testing = True
+    streamers_csv = Path("Raw Data\\all_verified_streamers.csv")
      
     async with localChzzkDbConnection(is_testing) as chzzkdb:
         async with httpx.AsyncClient() as client:
-            all_videos_per_streamer = await get_video_lists(client, Path(), 50 if is_testing else 50) 
+            all_videos_per_streamer = await get_video_lists(client, streamers_csv, 50 if is_testing else 50) 
 
-            if chzzkdb.is_testing: # reset database if I'm testing
+            if chzzkdb.is_testing:  # resets database if I'm testing
                 await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
 
             async with asyncio.TaskGroup() as tg:
@@ -82,8 +81,9 @@ async def main():
                         s_name = streamer_videos[0].video_streamer_name
                         s_id = streamer_videos[0].video_streamer_channel_id
                         streamer = UserInfo(s_name, s_id) 
-                        await chzzkdb.insert_info([streamer])
-                        await chzzkdb.insert_info(streamer_videos)
+                        await chzzkdb.insert_info([streamer])           # insert streamer first to ensure foreing key constraint
+                        await chzzkdb.insert_info(streamer_videos)      # Same here. Chats require videos to exist in the first place
+
                     for video_info in streamer_videos:
                         if await chzzkdb.insert_info([video_info]):
                             video_number = video_info.video_number
