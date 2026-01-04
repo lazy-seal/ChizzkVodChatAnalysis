@@ -9,6 +9,7 @@ from Crawler import load_user_info, logger
 from InfoDataObjects import UserInfo
 import time
 from functools import wraps
+from typing import Any, Callable
 
 def drop_csv_column(path:str | Path, column_name: str):
     df = pd.read_csv(path, encoding="utf-8")
@@ -31,7 +32,10 @@ def print_data_structure(data, indent=0):
 async def example():
     async with httpx.AsyncClient() as client:
         uinfo = await load_user_info(client, "b2fcc309d14c98ee241be56a488eac32")
-        pprint(uinfo.get_dict())
+        if uinfo:
+            pprint(uinfo.get_dict())
+        else:
+            print("user not available")
 
 def print_func_when_called(show_args=False):
     """
@@ -49,7 +53,6 @@ def print_func_when_called(show_args=False):
             return func(*args, **kwargs)
         return wrapper
     return decorator
-        
             
 if __name__ == "__main__":
     start = time.time()
