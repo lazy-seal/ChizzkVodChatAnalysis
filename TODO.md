@@ -1,6 +1,5 @@
 # TODO implementation:
 - implement:
-    - Go over comments and docstrings: update them
     - make init.py
     - extract "extra" to save space?
         - at least erase the ones I don't need like tokens and stuff
