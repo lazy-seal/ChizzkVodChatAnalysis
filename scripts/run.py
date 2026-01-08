@@ -10,24 +10,13 @@ import httpx
 from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_exponential 
 
-@retry(
-    stop=stop_after_attempt(5),
-    wait = wait_exponential(multiplier=1, min=5, max=120)
-)
+# @retry(
+#     stop=stop_after_attempt(5),
+#     wait = wait_exponential(multiplier=1, min=5, max=120)
+# )
 async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.AsyncClient, 
                                      video_number: int, api_request_limit: int = 5000): 
-    """
-    Saves all chats of the given video to database
-    
-    :param db: 
-    :type db: localChzzkDbConnection
-    :param client: 
-    :type client: httpx.AsyncClient
-    :param video_number: video identification number
-    :type video_number: int
-    :param api_request_limit: maximum request limit (200 chats per request)
-    :type api_request_limit: int
-    """
+    """Saves all chats of the given video to database"""
     async def insert_user_and_chats_to_db(users, chats):
         await db.insert_info(sorted(users))     # sort names to prevent deadlock condition
         await db.insert_info(chats)     
@@ -65,13 +54,13 @@ async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get
                 s_channel_id    = row['channel_id']
                 task = tg.create_task(load_video_info(client, s_channel_id, n_videos_to_get))
                 video_tasks.append(task)
-                # break
+                break
     return [task.result() for task in video_tasks]
 
 async def main():
     all_videos_per_streamer : list[list[VideoInfo]] = []    # list of streamers' list of videos: Each sublist is list of VideoInfo from the same streamer 
     is_testing = True
-    num_videos_per_streamer = 3
+    num_videos_per_streamer = 1
     streamers_csv = Path("Raw Data\\all_verified_streamers.csv")
      
     async with localChzzkDbConnection(is_testing) as chzzkdb:

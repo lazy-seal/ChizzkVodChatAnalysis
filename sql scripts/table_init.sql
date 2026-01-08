@@ -25,9 +25,10 @@ CREATE TABLE chats(
 	chat_video_id INTEGER REFERENCES videos(video_id) NOT NULL,
 	chat_message_time INTEGER NOT NULL,  -- in miliseconds
 	chat_content TEXT,
-	chat_message_type_code SMALLINT NOT NULL,
+	chat_message_type_code SMALLINT,
 	chat_donation_amount INTEGER,
-	chat_extras JSONB
+	chat_user_device_os TEXT,
+	chat_emojis JSONB
 );
 
 CREATE UNIQUE INDEX idx_user_id ON users (user_id);

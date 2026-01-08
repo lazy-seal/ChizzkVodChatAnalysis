@@ -146,23 +146,26 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
     if response.status_code != 200 or len(res_json['content']['videoChats']) == 0:
         logger.info("Fetch Finished on vid %d: status_code: %d", video_number, response.status_code)
         return [], set() 
+    elif response.status_code != 200:
+        logger.warning("Fetch not successful on vid %d: %s", video_number, response)
+        return [], set()
 
     for chat in res_json['content']['videoChats']:
         try:
             ### -------- Raw json handling starts -------- ###
             extras  = "" if not chat['extras'] else json.loads(chat['extras'])    # contains extra infos of the chat such as donation amount, gift type, emotes(url of image), etc
             profile = "" if not chat['profile'] else json.loads(chat['profile'])  # this is Null/None if user is anonymous
+            
+            chat_user_device_os     = extras["osType"] if extras and "osType" in extras else ""
+            chat_emojis             = extras["emojis"] if extras and "emojis" in extras else {} 
 
-            chat_user_nickname      = "" if not profile else profile['nickname']
-            chat_user_channel_id    = "" if not profile else profile['userIdHash']
+
+            chat_user_nickname      = profile['nickname'] if profile else ""
+            chat_user_channel_id    = profile['userIdHash'] if profile else ""
             chat_message_time       = int(chat['playerMessageTime'])
             chat_content            = '\"' + chat['content'].replace("\n", " ").replace('\x00', "") + '\"'  # newlines and nul value seem to appear somethimes
-            chat_message_type_code  = int(chat['messageTypeCode'])
-            chat_donation_amount    = 0 if chat['messageTypeCode'] != 10 else int(extras['payAmount']) # type: ignore -> payAmount will always be integer if the message type is donation
-            chat_extras             = "" if not chat['extras'] else json.dumps(chat['extras'].replace("\n", " "))  # same reason to add \"
-            
-            if chat['messageTypeCode'] == 10:
-                chat_donation_amount = int(extras['payAmount']) # type: ignore
+            chat_message_type_code  = chat['messageTypeCode']
+            chat_donation_amount    = int(extras['payAmount']) if chat['messageTypeCode'] == 10 else 0      # type: ignore -> payAmount will always be integer if the message type is donation
             
             if chat['messageTypeCode'] not in set((1, 10, 11, 12, 30)):      # @TODO make this a set of enum
                 logger.warning("Unkown messageTypeCode encountered: %d", chat['messageTypeCode'])
@@ -177,7 +180,8 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
                                 chat_content            = chat_content,
                                 chat_message_type_code  = chat_message_type_code,
                                 chat_donation_amount    = chat_donation_amount,
-                                chat_extras             = chat_extras)
+                                chat_user_device_os     = chat_user_device_os,
+                                chat_emojis             = chat_emojis,)
             user_info = UserInfo(chat_user_nickname, chat_user_channel_id)
             users.add(user_info)
             chats.append(chat_info)

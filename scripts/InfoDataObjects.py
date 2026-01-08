@@ -97,8 +97,9 @@ class ChatInfo():
     chat_user_channel_id: str
     chat_message_time: int
     chat_content: str
-    chat_message_type_code: int
-    chat_extras: str
+    chat_emojis: dict
+    chat_user_device_os: str
+    chat_message_type_code: str
     chat_donation_amount: int = 0
     chat_video_id: int = 0
     
@@ -111,7 +112,6 @@ class ChatInfo():
             "chat_content"              : self.chat_content,
             "chat_message_type_code"    : self.chat_message_type_code,
             "chat_donation_amount"      : self.chat_donation_amount,
-            "chat_extras"               : self.chat_extras,
         }
     
     def to_store_in_db(self):
@@ -119,9 +119,13 @@ class ChatInfo():
             int(self.chat_video_id), \
             int(self.chat_message_time), \
             self.chat_content, \
-            int(self.chat_message_type_code), \
+            self.chat_message_type_code, \
             int(self.chat_donation_amount), \
-            self.chat_extras
+            self.chat_user_device_os, \
+            str(self.chat_emojis).replace('\'', '\"'), \
+            # str(self.chat_emojis) if self.chat_emojis else "",
+
+            
 
 @dataclass
 class UserInfo():

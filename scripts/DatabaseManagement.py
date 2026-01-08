@@ -83,8 +83,9 @@ class localChzzkDbConnection:
                     INSERT INTO chats (
                         chat_user_id, chat_video_id, chat_message_time,
                         chat_content, chat_message_type_code,
-                        chat_donation_amount, chat_extras
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                        chat_donation_amount, chat_user_device_os,
+                        chat_emojis 
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
                 """
                 await self.pool.executemany(query, records)
             case [UserInfo(), *_]:

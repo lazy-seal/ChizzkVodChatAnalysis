@@ -2,6 +2,29 @@ SELECT * FROM users;
 SELECT * FROM chats WHERE chat_user_id = 'cc8f88e939080b37e78b87fd0172248c';
 SELECT * FROM videos;
 
+UPDATE chats
+SET chat_extras = (chat_extras#>>'{}')::jsonb
+WHERE chat_extras::text LIKE '"%';
+
+SELECT 
+	chat_extras ->> emoji
+FROM chats LIMIT 500;
+
+SELECT 
+    (chat_extras#>>'{}')::jsonb ->> 'osType' as os_type
+FROM chats LIMIT 500;
+
+SELECT
+    (chat_message_time / 60000) AS vod_timestamp,
+    COUNT(*) AS message_count
+FROM 
+    chats
+WHERE
+	chat_video_id = 11061865
+GROUP BY 
+    (chat_message_time / 60000)
+ORDER BY vod_timestamp;
+	
 -- 스트리머별 통계
 SELECT 
 	u.user_nickname AS "스트리머", 
@@ -18,13 +41,27 @@ GROUP BY v.video_streamer_id, u.user_id;
 
 -- 유저별 통계
 -- top 100으로 끊자 (유저가 너무 많음)
+-- 도네로 정렬
 SELECT 
-	u.user_nickname as "치수", 
-	COUNT(c.chat_id) AS "채팅 수",
-	SUM(c.chat_donation_amount) AS "총 도네 수"
+	u.user_nickname as 치수, 
+	COUNT(c.chat_id) AS 채팅_수,
+	SUM(c.chat_donation_amount) AS 총_도네
 FROM chats AS c, users AS u
 WHERE c.chat_user_id = u.user_id
-GROUP BY chat_user_id, u.user_id;
+GROUP BY chat_user_id, u.user_id
+ORDER BY 총_도네 DESC
+LIMIT 500;
+
+-- 채팅_수로 정렬
+SELECT 
+	u.user_nickname as 치수, 
+	COUNT(c.chat_id) AS 채팅_수,
+	SUM(c.chat_donation_amount) AS 총_도네
+FROM chats AS c, users AS u
+WHERE c.chat_user_id = u.user_id
+GROUP BY chat_user_id, u.user_id
+ORDER BY 채팅_수 DESC
+LIMIT 500;
 
 -- (추가) 스트리머별 가장 많이 채팅을 친 유저들
 
