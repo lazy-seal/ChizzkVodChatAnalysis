@@ -1,13 +1,7 @@
 # TODO implementation:
 - implement:
-    - keep the list of videos that had error while downloading chat: print in console or keep a record on txt file or something
-    - extract "extra" to save space?
-        - at least erase the ones I don't need like tokens and stuff
     - db to csv, https to csv
     - Update Testing.py 
-    - Error handling:
-        - when no data was received 
-    - centeralize api urls to InfoDataObjects.py (or should I?)
 
 # TODO Ideas for Data anyalysis
 ## Doesn't need Pre-Processing
