@@ -125,9 +125,6 @@ class ChatInfo():
         }
     
     def to_store_in_db(self):
-        emoji_in_str = str(self.chat_emojis).replace('\'', '\"').replace("\n", " ").replace('\x00', "")
-        if not emoji_in_str:
-            emoji_in_str = "{}"     # 봇들 중에 가끔 emoji 항목에 딕셔너리 대신 ""만 집어넣는 악질봇들이 있음....
         return str(self.chat_user_channel_id), \
             int(self.chat_video_id), \
             int(self.chat_message_time), \
@@ -135,7 +132,7 @@ class ChatInfo():
             self.chat_message_type_code, \
             int(self.chat_donation_amount), \
             self.chat_user_device_os, \
-            emoji_in_str, \
+            str(self.chat_emojis).replace('\'', '\"').replace("\n", " ").replace('\x00', ""), \
             # str(self.chat_emojis) if self.chat_emojis else "",
 
             

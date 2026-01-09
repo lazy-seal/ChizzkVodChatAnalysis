@@ -70,8 +70,8 @@ async def main():
             #     await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
             await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
 
-            async with asyncio.TaskGroup() as tg:
-                for streamer_videos in all_videos_per_streamer:
+            for streamer_videos in all_videos_per_streamer:
+                async with asyncio.TaskGroup() as tg:           # I start taskgroup inside the for loop to make sure I finish each streamer, rather than just propagating too many coroutines across the streamers
                     if streamer_videos:
                         s_name = streamer_videos[0].video_streamer_name
                         s_id = streamer_videos[0].video_streamer_channel_id

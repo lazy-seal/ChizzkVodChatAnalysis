@@ -157,7 +157,7 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
             profile = "" if not chat['profile'] else json.loads(chat['profile'])  # this is Null/None if user is anonymous
             
             chat_user_device_os     = extras["osType"] if extras and "osType" in extras else ""
-            chat_emojis             = extras["emojis"] if extras and "emojis" in extras else {} 
+            chat_emojis             = extras["emojis"] if extras and "emojis" in extras and extras["emojis"] else {}  # sometimes emojis is left as "" by some bots... fuck them, honestly...
 
 
             chat_user_nickname      = profile['nickname'] if profile else ""
@@ -167,7 +167,7 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
             chat_message_type_code  = chat['messageTypeCode']
             chat_donation_amount    = int(extras['payAmount']) if chat['messageTypeCode'] == 10 else 0      # type: ignore -> payAmount will always be integer if the message type is donation
             
-            if chat['messageTypeCode'] not in set((1, 10, 11, 12, 30)):      # @TODO make this a set of enum
+            if chat['messageTypeCode'] not in set((1, 10, 11, 12, 13, 30)):      # @TODO make this a set of enum
                 logger.warning("Unkown messageTypeCode encountered: %d", chat['messageTypeCode'])
                 for k, v in chat.items():
                     logger.info("%s: %s", k, v)
