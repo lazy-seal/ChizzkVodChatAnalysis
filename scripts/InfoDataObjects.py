@@ -22,27 +22,7 @@ Path("Raw Data\\videos.csv")
 Path(f"Raw Data\\Chats\\{streamer_name}_{video_number}_chats.csv")
 """
 
-VIDEOS_CSV_HEADER = [
-    "video_streamer_name",
-    "video_streamer_channel_id",
-    "video_number",
-    "video_title",
-    "video_duration",
-    "video_tags",
-    "video_category_type",
-    "video_category",
-    "video_publish_date"
-]
 
-CHATS_CSV_HEADER = [
-    "chat_user_nickname",
-    "chat_user_channel_id",
-    "chat_message_time",
-    "chat_content",
-    "chat_message_type_code",
-    "chat_donation_amount",
-    "chat_extras"
-]
 
 STREAMERS_CSV_HEADER = [
     "streamer_nickname",
@@ -64,11 +44,27 @@ class VideoInfo():
     video_category_type: str
     video_category: str
     video_publish_date: str
-    # video_chat_count: int
-    # video_total_donation_amount: int
-    # video_active_user_count: int
+    video_chat_count: int = -1
+    video_total_donation_amount: int = -1
+    video_active_user_count: int = -1
     
-    def get_dict(self):
+    
+    VIDEOS_CSV_HEADER = [
+        "video_streamer_name",
+        "video_streamer_channel_id",
+        "video_number",
+        "video_title",
+        "video_duration",
+        "video_tags",
+        "video_category_type",
+        "video_category",
+        "video_publish_date",
+        "video_chat_count",
+        "video_total_donation_amount",
+        "video_active_user_count"
+    ]
+    
+    def to_store_in_csv(self):
         return {
             "video_streamer_name"   : self.video_streamer_name,
             "video_streamer_channel_id" : self.video_streamer_channel_id,
@@ -78,7 +74,10 @@ class VideoInfo():
             "video_tags"                : self.video_tags,
             "video_category_type"       : self.video_category_type,
             "video_category"            : self.video_category,
-            "video_publish_date"        : self.video_publish_date
+            "video_publish_date"        : self.video_publish_date,
+            "video_chat_count"          : self.video_chat_count,
+            "video_total_donation_amount" : self.video_total_donation_amount,
+            "video_active_user_count"   : self.video_active_user_count,
         }
     
     def to_store_in_db(self):
@@ -102,6 +101,16 @@ class ChatInfo():
     chat_message_type_code: str
     chat_donation_amount: int = 0
     chat_video_id: int = 0
+
+    CHATS_CSV_HEADER = [
+        "chat_user_nickname",
+        "chat_user_channel_id",
+        "chat_message_time",
+        "chat_content",
+        "chat_message_type_code",
+        "chat_donation_amount",
+        "chat_emojis",
+    ]
     
     def get_dict(self):
         return {
@@ -112,6 +121,7 @@ class ChatInfo():
             "chat_content"              : self.chat_content,
             "chat_message_type_code"    : self.chat_message_type_code,
             "chat_donation_amount"      : self.chat_donation_amount,
+            "chat_emojis"               : self.chat_emojis,
         }
     
     def to_store_in_db(self):

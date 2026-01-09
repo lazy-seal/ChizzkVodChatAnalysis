@@ -10,10 +10,10 @@ import httpx
 from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_exponential 
 
-# @retry(
-#     stop=stop_after_attempt(5),
-#     wait = wait_exponential(multiplier=1, min=5, max=120)
-# )
+@retry(
+    stop = stop_after_attempt(5),
+    wait = wait_exponential(multiplier=1, min=5, max=120)
+)
 async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.AsyncClient, 
                                      video_number: int, api_request_limit: int = 5000): 
     """Saves all chats of the given video to database"""
@@ -59,8 +59,8 @@ async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get
 
 async def main():
     all_videos_per_streamer : list[list[VideoInfo]] = []    # list of streamers' list of videos: Each sublist is list of VideoInfo from the same streamer 
-    is_testing = True
-    num_videos_per_streamer = 1
+    is_testing = False
+    num_videos_per_streamer = 50
     streamers_csv = Path("Raw Data\\all_verified_streamers.csv")
      
     async with localChzzkDbConnection(is_testing) as chzzkdb:

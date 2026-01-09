@@ -1,19 +1,12 @@
 SELECT * FROM users;
-SELECT * FROM chats WHERE chat_user_id = 'cc8f88e939080b37e78b87fd0172248c';
+SELECT * FROM chats;
 SELECT * FROM videos;
 
-UPDATE chats
-SET chat_extras = (chat_extras#>>'{}')::jsonb
-WHERE chat_extras::text LIKE '"%';
+SELECT emoji FROM chats LIMIT 500;
 
-SELECT 
-	chat_extras ->> emoji
-FROM chats LIMIT 500;
+SELECT count(*), chat_user_device_os as os FROM chats group by chat_user_device_os;
 
-SELECT 
-    (chat_extras#>>'{}')::jsonb ->> 'osType' as os_type
-FROM chats LIMIT 500;
-
+-- timeframe block chats
 SELECT
     (chat_message_time / 60000) AS vod_timestamp,
     COUNT(*) AS message_count

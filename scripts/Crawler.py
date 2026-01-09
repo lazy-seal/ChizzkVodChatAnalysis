@@ -7,7 +7,7 @@ from pprint import pprint
 import httpx
 import asyncio
 import pandas as pd
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo, VIDEOS_CSV_HEADER, CHATS_CSV_HEADER, STREAMERS_CSV_HEADER
+from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo 
 
 
 with open("Private//private.json", encoding="utf-8") as f:
@@ -194,18 +194,18 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
     return chats, users
 
 
-def write_video_info_to_csv(video_info: VideoInfo):
+def write_video_info_to_csv(video_info: VideoInfo, path: Path = Path("raw data\\videos.csv")):
     """Saves specific loaded vods on csv file."""
-    video_csv_path = Path("Raw Data\\videos.csv")
+    video_csv_path = path
     
     if not video_csv_path.exists():
         with open(video_csv_path, "w", newline="", encoding="utf-8") as f:
-            csv_writer = csv.DictWriter(f, fieldnames=VIDEOS_CSV_HEADER)
+            csv_writer = csv.DictWriter(f, fieldnames=VideoInfo.VIDEOS_CSV_HEADER)
             csv_writer.writeheader()
         
     with open(video_csv_path, "a", newline="", encoding="utf-8") as f:
-        csv_writer = csv.DictWriter(f, fieldnames=VIDEOS_CSV_HEADER)
-        csv_writer.writerow(video_info.get_dict())
+        csv_writer = csv.DictWriter(f, fieldnames=VideoInfo.VIDEOS_CSV_HEADER)
+        csv_writer.writerow(video_info.to_store_in_csv())
 
 
 def write_vod_chats_to_csv(streamer_name: str, video_number: int, video_chats: list[ChatInfo]):
@@ -214,16 +214,13 @@ def write_vod_chats_to_csv(streamer_name: str, video_number: int, video_chats: l
     
     if not chat_csv_path.exists():
         with open(chat_csv_path, 'w', newline="", encoding="utf-8") as f:
-            csv_writer = csv.DictWriter(f, fieldnames=CHATS_CSV_HEADER)
+            csv_writer = csv.DictWriter(f, fieldnames=ChatInfo.CHATS_CSV_HEADER)
             csv_writer.writeheader()
     
     with open(chat_csv_path, 'a', newline="", encoding="utf-8") as f:
-        csv_writer = csv.DictWriter(f, fieldnames=CHATS_CSV_HEADER)
+        csv_writer = csv.DictWriter(f, fieldnames=ChatInfo.CHATS_CSV_HEADER)
         for chat_info in video_chats:
             csv_writer.writerow(chat_info.get_dict())
 
 if __name__ == "__main__":
     pass
-    # what if the user in 1 stream appear in another stream? how do I get
-    # index on the user name 
-    # check user name if they exist
