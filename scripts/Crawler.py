@@ -163,7 +163,7 @@ async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, 
             chat_user_nickname      = profile['nickname'] if profile else ""
             chat_user_channel_id    = profile['userIdHash'] if profile else ""
             chat_message_time       = int(chat['playerMessageTime'])
-            chat_content            = '\"' + chat['content'].replace("\n", " ").replace('\x00', "") + '\"'  # newlines and nul value seem to appear somethimes
+            chat_content            = chat['content'].replace("\n", " ").replace('\x00', "")  # newlines and nul value seem to appear somethimes
             chat_message_type_code  = chat['messageTypeCode']
             chat_donation_amount    = int(extras['payAmount']) if chat['messageTypeCode'] == 10 else 0      # type: ignore -> payAmount will always be integer if the message type is donation
             

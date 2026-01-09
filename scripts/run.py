@@ -66,8 +66,9 @@ async def main():
         async with httpx.AsyncClient() as client:
             all_videos_per_streamer = await get_video_lists(client, streamers_csv, num_videos_per_streamer) 
 
-            if chzzkdb.is_testing:  # resets database if I'm testing
-                await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
+            # if chzzkdb.is_testing:  # resets database if I'm testing
+            #     await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
+            await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
 
             async with asyncio.TaskGroup() as tg:
                 for streamer_videos in all_videos_per_streamer:

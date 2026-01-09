@@ -78,6 +78,16 @@ class localChzzkDbConnection:
         """
         match info_list:
             case [ChatInfo(), *_]:
+                try:
+                    i = 0
+                    info = None
+                    for info in info_list:
+                        i += 1
+                        json.loads(info.to_store_in_db()[-1])
+                except Exception as e:
+                   logger.warning("Error while json conversion: ") 
+                   logger.warning(str(info))
+                   del info_list[i] # type: ignore
                 records = [info.to_store_in_db() for info in info_list]
                 query = """
                     INSERT INTO chats (
