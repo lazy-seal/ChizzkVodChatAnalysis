@@ -2,6 +2,8 @@
 - implement:
     - db to csv, https to csv
     - Update Testing.py 
+    - I can access more than 50 videos by adding below line to the http request on video request
+        - /videos?page=0
 
 # TODO Ideas for Data anyalysis
 ## Doesn't need Pre-Processing

@@ -54,7 +54,6 @@ async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get
                 s_channel_id    = row['channel_id']
                 task = tg.create_task(load_video_info(client, s_channel_id, n_videos_to_get))
                 video_tasks.append(task)
-                break
     return [task.result() for task in video_tasks]
 
 async def main():
@@ -80,7 +79,7 @@ async def main():
                         await chzzkdb.insert_info(streamer_videos)      # Same here. Chats require videos to exist in the first place
 
                     for video_info in streamer_videos:
-                        if await chzzkdb.insert_info([video_info]):
+                        if await chzzkdb.exists_in_db(video_info) and await chzzkdb.insert_info([video_info]):
                             video_number = video_info.video_number
                             tg.create_task(fetch_and_save_chats_to_db(chzzkdb, client, video_number))
             
