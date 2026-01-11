@@ -2,6 +2,11 @@ SELECT * FROM users;
 SELECT * FROM chats;
 SELECT * FROM videos;
 
+SELECT COUNT(*) as counter
+WHERE v
+GROUP BY c.chat_video_id, v.video_id
+WHERE
+
 SELECT emoji FROM chats LIMIT 500;
 
 SELECT count(*), chat_user_device_os as os FROM chats group by chat_user_device_os;
