@@ -2,10 +2,7 @@ SELECT * FROM users;
 SELECT * FROM chats;
 SELECT * FROM videos;
 
-SELECT COUNT(*) as counter
-WHERE v
-GROUP BY c.chat_video_id, v.video_id
-WHERE
+SELECT AVG(video_chat_count) FROM videos;
 
 SELECT emoji FROM chats LIMIT 500;
 
