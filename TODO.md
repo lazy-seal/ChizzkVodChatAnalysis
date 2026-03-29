@@ -2,16 +2,6 @@
 - implement:
     - db to csv, https to csv
     - Update Testing.py 
-    - I can access more than 50 videos by adding below line to the http request on video request
-        - /videos?page=0
-        - while pagenumber < pagelimit:
-            for each video in page
-                if the video is witthin the range:
-                    fetch the video info
-                elif the video publishDate is after the upper boundary:
-                    ingore the video
-                elif the video publishDate is before the lower boundary:
-                    return (not break: RETURN)
 
 # TODO Ideas for Data anyalysis
 ## Doesn't need Pre-Processing

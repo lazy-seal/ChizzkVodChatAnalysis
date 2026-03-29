@@ -96,22 +96,6 @@ if __name__ == "__main__":
     end_date                = datetime(2026, 3, 31)
     st = time.time()
     # asyncio.run(main())
-    
-    # date functionality testing
-    async def wrapper_get_video_lists():
-        async with httpx.AsyncClient() as client:
-            videos_per_streamer = await get_video_lists(client, Path("Raw Data\\all_verified_streamers.csv"), start_date, end_date)
-        for streamer_videos in videos_per_streamer:
-            if streamer_videos:
-                print(streamer_videos[0].video_streamer_name)
-            else:
-                print("no video for this streamer")
-            for video in streamer_videos:
-                print(video.video_publish_date)
-            print()
-        pprint(videos_per_streamer[0])
-    asyncio.run(wrapper_get_video_lists())
-
     elapsed = time.time() - st
     print(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
     logger.info(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
