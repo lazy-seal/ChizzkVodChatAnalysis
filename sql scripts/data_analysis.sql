@@ -32,7 +32,8 @@ SELECT
 	AVG(v.video_active_user_count) AS "평균 채팅 유저"
 FROM videos as v, users as u
 WHERE v.video_streamer_id = u.user_id -- I should add date-checking clause
-GROUP BY v.video_streamer_id, u.user_id;
+GROUP BY v.video_streamer_id, u.user_id
+ORDER BY "채팅 화력 (chats per minutes)" DESC;
 
 -- 유저별 통계
 -- top 100으로 끊자 (유저가 너무 많음)

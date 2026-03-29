@@ -5,6 +5,7 @@ from pathlib import Path
 
 import csv
 import time
+from datetime import datetime
 import asyncio
 import httpx
 from pprint import pprint
@@ -44,7 +45,7 @@ async def fetch_and_save_chats_to_db(db:localChzzkDbConnection, client: httpx.As
     logger.info(f"{video_number} db write took {int(elapsed) // 60}m {int(elapsed % 60)}s")
 
 
-async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get: int = 50):
+async def get_video_lists(client: httpx.AsyncClient, path: Path, start_date: datetime, end_date: datetime):
     """given path to the files to the streamers, return lists of VideoInfo"""
     video_tasks = []
     with open(path, "r", encoding="utf-8") as f:
@@ -52,19 +53,20 @@ async def get_video_lists(client: httpx.AsyncClient, path: Path, n_videos_to_get
         async with asyncio.TaskGroup() as tg:
             for row in csv_reader:
                 s_channel_id    = row['channel_id']
-                task = tg.create_task(load_video_info(client, s_channel_id, n_videos_to_get))
+                task = tg.create_task(load_video_info(client, s_channel_id, start_date, end_date))
                 video_tasks.append(task)
     return [task.result() for task in video_tasks]
 
 async def main():
     all_videos_per_streamer : list[list[VideoInfo]] = []    # list of streamers' list of videos: Each sublist is list of VideoInfo from the same streamer 
     is_testing = False
-    num_videos_per_streamer = 50
     streamers_csv = Path("Raw Data\\all_verified_streamers.csv")
+    start_date              = datetime(2026, 3, 1)
+    end_date                = datetime(2026, 3, 31)
      
     async with localChzzkDbConnection(is_testing) as chzzkdb:
         async with httpx.AsyncClient() as client:
-            all_videos_per_streamer = await get_video_lists(client, streamers_csv, num_videos_per_streamer) 
+            all_videos_per_streamer = await get_video_lists(client, streamers_csv, start_date, end_date) 
 
             if chzzkdb.is_testing:  # resets database if I'm testing
                 await chzzkdb.execute_sql_script(Path("sql scripts\\table_init.sql"))
@@ -90,8 +92,26 @@ async def main():
                     tg.create_task(chzzkdb.insert_statistics_for_vod(video_info.video_number))
     
 if __name__ == "__main__":
+    start_date              = datetime(2026, 3, 1)
+    end_date                = datetime(2026, 3, 31)
     st = time.time()
-    asyncio.run(main())
+    # asyncio.run(main())
+    
+    # date functionality testing
+    async def wrapper_get_video_lists():
+        async with httpx.AsyncClient() as client:
+            videos_per_streamer = await get_video_lists(client, Path("Raw Data\\all_verified_streamers.csv"), start_date, end_date)
+        for streamer_videos in videos_per_streamer:
+            if streamer_videos:
+                print(streamer_videos[0].video_streamer_name)
+            else:
+                print("no video for this streamer")
+            for video in streamer_videos:
+                print(video.video_publish_date)
+            print()
+        pprint(videos_per_streamer[0])
+    asyncio.run(wrapper_get_video_lists())
+
     elapsed = time.time() - st
     print(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
     logger.info(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")

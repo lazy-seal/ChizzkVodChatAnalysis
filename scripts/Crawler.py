@@ -7,7 +7,9 @@ from pprint import pprint
 import httpx
 import asyncio
 import pandas as pd
+from datetime import date, timedelta, datetime
 from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo 
+import time
 
 
 with open("Private//private.json", encoding="utf-8") as f:
@@ -65,14 +67,15 @@ async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> Use
     return user_info
 
 
-async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, n_videos_to_load=50) -> list[VideoInfo]:
+async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, start_date: datetime, end_date: datetime) -> list[VideoInfo]:
     """
     Description:
         Sends http request to Chzzk api to get a relevant info of the video
  
     Parameters:
-        n_videos_to_load (int) : number of video information you want to request. \
-            Maximum is 50 (enforced with ValueError). The api gives no response if greater than 50.
+        streamer_channel_id (str)
+        start_date (date object): inclusive range start
+        end_date (date object): inclusive range end
         
     Returns:
         vods (list[VideoInfo])
@@ -80,34 +83,55 @@ async def load_video_info(client: httpx.AsyncClient, streamer_channel_id, n_vide
     Request url:
         "https://api.chzzk.naver.com/service/v1/channels/{streamer_channel_id}/videos"
     """
-    if n_videos_to_load > 50:
-        raise ValueError("The size needs to be less than 50. Otherwise, you get https error. Might change later on, depending on how Chzzk wants api to be.")
     
     vods        = []
+    page        = 0
     url         = f"https://api.chzzk.naver.com/service/v1/channels/{streamer_channel_id}/videos"
-    params      = {"size": n_videos_to_load}
-    res         = await client.get(url, params=params, headers=HEADERS)
+    video_date  = datetime(2099, 12, 12)
     
-    if res.status_code != 200:
-        raise ConnectionError(f"the api call was not successful:{res}")
+    loopcounter = 0
     
-    res_json = res.json()
-    
-    # logger.info(res_json)
-    # pprint(res_json)
-    for video in res_json["content"]["data"]:
-        video_info = VideoInfo(
-            video_streamer_name         = video['channel']['channelName'],
-            video_streamer_channel_id   = streamer_channel_id,
-            video_number                = int(video['videoNo']),
-            video_title                 = video['videoTitle'].replace("\n", " "),
-            video_duration              = int(video['duration']),
-            video_tags                  = video['tags'],
-            video_category_type         = video['categoryType'],
-            video_category              = video['videoCategory'],
-            video_publish_date          = video['publishDate']
-        )
-        vods.append(video_info)
+    while video_date >= start_date:
+        loopcounter += 1
+
+        params  = {"size": 50, "page": page}
+        res     = await client.get(url, params=params, headers=HEADERS)
+        page    += 1
+        
+        if res.status_code != 200:
+            raise ConnectionError(f"the api call was not successful:{res}")
+        
+        res_json = res.json()
+        if not res_json["content"]["data"]:
+            break
+        if loopcounter > 10:
+            print(page)
+            # pprint(res_json)
+            # time.sleep(5)
+            break
+        
+        for video in res_json["content"]["data"]:
+            video_info = VideoInfo(
+                video_streamer_name         = video['channel']['channelName'],
+                video_streamer_channel_id   = streamer_channel_id,
+                video_number                = int(video['videoNo']),
+                video_title                 = video['videoTitle'].replace("\n", " "),
+                video_duration              = int(video['duration']),
+                video_tags                  = video['tags'],
+                video_category_type         = video['categoryType'],
+                video_category              = video['videoCategory'],
+                video_publish_date          = video['publishDate']
+            )
+            
+            # check if the video is within the range of intended dates
+            # Format: Year-Month-Day Hour:Minute:Second
+            video_date = datetime.strptime(video_info.video_publish_date, "%Y-%m-%d %H:%M:%S")
+            
+            if video_date < start_date:
+                break
+            if video_date <= end_date:
+               vods.append(video_info) 
+
     return vods
 
 async def load_chat_and_user_data(client: httpx.AsyncClient, video_number: int, message_time: int) -> tuple[list[ChatInfo], set[UserInfo]]:

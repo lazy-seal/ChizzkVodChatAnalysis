@@ -1,4 +1,4 @@
-import psycopg2
+# import psycopg2
 from pprint import pprint
 import asyncpg
 import datetime
