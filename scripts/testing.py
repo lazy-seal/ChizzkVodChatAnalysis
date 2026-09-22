@@ -10,7 +10,7 @@ from pprint import pprint
 import httpx
 import time
 
-from Crawler import logger
+from Crawler import logger, download_emoji
 """
 Raw Data\\videos.csv
 Raw Data\\Chats\\{video.video_streamer_name}_{video.video_number}_chats.csv
@@ -84,9 +84,14 @@ async def main():
                 # now that chat is inserted, I can add the video statistics 
                 await chzzk_db.insert_statistics_for_vod(int(video.video_number))
 
-
+async def check_emoji():
+    async with localChzzkDbConnection(is_testing=True) as chzzk_db:
+        async with httpx.AsyncClient() as client:
+            await download_emoji(client, {'2reinAngry': "https://nng-phinf.pstatic.net/glive/subscription/emoji/9f15ae1ba9dabf9cd3f340118c704b04/1/2reinAngry_1767287443322.png"})
+            
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
+    asyncio.run(check_emoji())
     
     
             

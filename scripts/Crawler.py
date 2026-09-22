@@ -21,6 +21,31 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+
+async def download_emoji(client: httpx.AsyncClient, emoji: dict) -> None:
+    """
+    Downloads an emoji with the request to Chzzk api
+    
+    Parameter:
+        client (httpx.AsyncClient): client to perform api request
+        emoji (dict): key as 'name of the emoji' and value as the 'url of the emoji'
+        
+    Returns:
+        None:
+    """
+    
+    for emoji_name, url in emoji.items():
+        file_extension:str = url.split('.')[-1]
+        res = await client.get(url=url, headers=HEADERS)
+        
+        if res.status_code == 200:
+            with open(f"Raw Data\\Emojis\\{emoji_name}.{file_extension}", "wb") as f:
+                f.write(res.content)
+            logger.info("Emoji download successful %s: %s", emoji_name, url)
+        else:
+            logger.warning("Emoji download failed %s: %s", emoji_name, url)
+    
+
 async def load_user_info(client: httpx.AsyncClient, user_channel_id: str) -> UserInfo | None:
     """
     Sends http request to Chzzk api to get a relevant info of the user
