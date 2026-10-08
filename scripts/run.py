@@ -79,6 +79,9 @@ async def main():
                         streamer = UserInfo(s_name, s_id) 
                         await chzzkdb.insert_info([streamer])           # insert streamer first to ensure foreing key constraint
                         await chzzkdb.insert_info(streamer_videos)      # Same here. Chats require videos to exist in the first place
+                    else:
+                        # the streamer has no replay available in chzzk
+                        logger.info("streamer %s's replay does not exist (sid: %d)", s_name, s_id)
 
                     for video_info in streamer_videos:
                         if await chzzkdb.exists_in_db(video_info) and await chzzkdb.insert_info([video_info]):
