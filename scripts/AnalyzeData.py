@@ -38,7 +38,7 @@ def simple_bar(x, height, xlabel: str = '', ylabel: str = '', title:str = ''):
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.savefig(f"Graphs/{title}_plot")
+    plt.savefig(f"Graphs/{title}_bar")
     plt.clf()
 
 async def general_statistics_per_streamer(db:localChzzkDbConnection):
@@ -66,7 +66,7 @@ async def general_statistics_per_streamer(db:localChzzkDbConnection):
     total_donation_amount = 0
     total_chat_count = 0
     
-    chats_per_minute_per_streamer: dict[str, int] = {}
+    chats_per_minute: dict[int, int] = defaultdict(int)      # 500 묶음당 해당되는 스트리머의 수
     donation_per_hour: dict[int, int] = defaultdict(int)     # 5000 묶음 당 해당되는 스트리머의 수
     
     for record in res:
@@ -74,30 +74,32 @@ async def general_statistics_per_streamer(db:localChzzkDbConnection):
             total_chat_count += record['total_chat_count']#if record['total_chat_count'] else 0
             total_donation_amount += record['total_donation_amount']#if record['total_donation_amount'] else 0
             
-            chats_per_minute_per_streamer[record['streamer']] = record['chats_per_minute']
+            # calculate the cpm (chats_per_minute) category the streamer fits in, and then add the count of the category
+            cpm: float = record['chats_per_minute']
+            cpm_category: int = int(cpm / 50)
+            chats_per_minute[cpm_category] += 1
             
             # calculate the wage category the streamer fits in, and then add the count of the category
             dph: float = record['donation_per_hour']
             dph_category: int = int(dph / 5000)
             donation_per_hour[dph_category] += 1
 
-    # pprint(chats_per_minute_per_streamer)
     
     # 채팅 화력
-    # simple_bar([i for i in range(len(chats_per_minute_per_streamer))], 
-    #             chats_per_minute_per_streamer.values(),
-    #             xlabel='스트리머',
-    #             ylabel='채팅 화력 (분당 채팅 수)',
-    #             title='스트리머별 채팅 화력')
+    # 50cpm 단위로 묶어서 바 그래프로 계산
+    max_chat_category = max(chats_per_minute.keys())
+    x: list[str] = [f"{50*i}~{50*(i+1)-1}" for i in range(0, max_chat_category)]
+    y: list[int] = [chats_per_minute[i] for i in range(len(x))]
+    simple_bar(x, y,
+               xlabel='분당 채팅 수',
+               ylabel='스트리머 수',
+               title='채팅 화력 (평균 분당 채팅 수)')
     
     # 평균 시급
     # 5000원 단위로 묶어서 바 그래프로 계산
     max_wage_category = max(donation_per_hour.keys())
     x: list[str] = [f"₩{5000 * i}~\n₩{5000 * (i+1) - 1}" for i in range(0, max_wage_category)]
     y: list[int] = [donation_per_hour[i] for i in range(len(x))]
-    print(x)
-    print()
-    print(y)
     simple_bar(x, y, 
                xlabel='시간당 도네이션',
                ylabel='스트리머 수',
