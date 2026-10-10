@@ -4,7 +4,9 @@ SELECT * FROM videos;
 
 SELECT AVG(video_chat_count) FROM videos;
 
-SELECT chat_emojis FROM chats LIMIT 500;
+SELECT DISTINCT chat_emojis FROM chats 
+WHERE chat_emojis <> '{}'::jsonb
+LIMIT 500;
 
 SELECT count(*), chat_user_device_os as os FROM chats group by chat_user_device_os;
 
@@ -19,21 +21,43 @@ WHERE
 GROUP BY 
     (chat_message_time / 60000)
 ORDER BY vod_timestamp;
-	
+
+-- 스트리머 연관성
+-- USERS_PER_VIDEO
+(SELECT chat_video_id, ARRAY_AGG(DISTINCT chat_user_id) 
+FROM chats GROUP BY chat_video_id
+limit 100)
+
+-- NUMBER OF USERS PER STREAMER
+SELECT u.user_nickname, COUNT(c.chat_user_id) as user_count
+FROM (SELECT DISTINCT video_streamer_id as streamer_id FROM videos) AS s
+	JOIN videos v ON v.video_streamer_id = s.streamer_id
+	JOIN chats c ON c.chat_video_id = v.video_id,
+users as u
+WHERE u.user_id = s.streamer_id
+GROUP BY s.streamer_id, u.user_nickname
+ORDER BY user_count DESC;
+
+
+
 -- 스트리머별 통계
-SELECT 
-	u.user_nickname AS "스트리머", 
-	SUM(v.video_chat_count) AS "총 채팅수", 
-	AVG(v.video_chat_count) AS "평균 채팅수",
-	SUM(v.video_chat_count) / (SUM(v.video_duration) / 60) AS "채팅 화력 (chats per minutes)",
-	SUM(v.video_total_donation_amount) AS "총 도네", 
-	SUM(v.video_total_donation_amount) / (SUM(v.video_duration) / 360) AS "도네 화력 (donation per hours)",
-	AVG(v.video_total_donation_amount) AS "평균 도네",
-	AVG(v.video_active_user_count) AS "평균 채팅 유저"
-FROM videos as v, users as u
-WHERE v.video_streamer_id = u.user_id
-GROUP BY v.video_streamer_id, u.user_id
-ORDER BY "채팅 화력 (chats per minutes)" DESC;
+    SELECT users.user_nickname AS "streamer", res.*
+    FROM (
+        SELECT 
+            video_streamer_id,
+            SUM(video_chat_count) AS "chat_count", 
+            ROUND(AVG(video_chat_count), 2) AS "average_chat_count_per_vid",
+            ROUND(SUM(video_chat_count) / (SUM(video_duration) / 60), 2) AS "chats_per_minute",
+            SUM(video_total_donation_amount) AS "total_donation", 
+            ROUND(SUM(video_total_donation_amount) / (SUM(video_duration) / 360), 2) AS "donation_per_hours",
+            ROUND(AVG(video_total_donation_amount), 2) AS "average_donation_per_video",
+            ROUND(AVG(video_active_user_count), 2) AS "average_chat_count_per_video"
+        FROM videos
+        GROUP BY video_streamer_id
+        ORDER BY "chats_per_minute" DESC
+    ) AS res, users
+    WHERE res.video_streamer_id = users.user_id;
+
 
 -- 스트리머별 자주 쓰이는 이모티콘
 SELECT 

@@ -23,10 +23,6 @@
 - category/tag specific metrics:
     - participation rate of chat given category or tags of stream
 
-## Needs Pre-processing:
-- Word Frequency + Wordcloud: comparative analysis between streamers, streaming categories
-- Sentiment Analysis: pos/neg, toxisity, horniness, etc
-    - sentiment analysis graphing (average video)
 
 ## Could be both:
 - Analysis in relation to Streaming lifecycle: early, middle, end

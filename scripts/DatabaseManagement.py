@@ -1,6 +1,7 @@
 # import psycopg2
 from pprint import pprint
 import asyncpg
+from asyncpg import Record
 import datetime
 import json
 from pathlib import Path
@@ -167,12 +168,11 @@ class localChzzkDbConnection:
             async with self.pool.acquire() as con:
                 await con.execute(script)
             
-    # I abstracted out the sql statement from the crawler and db manage
-    # db manager will execute pre-written queries only and provide functionality
-    # @print_func_when_called(True)
-    # def execute_sql_statement(self, statement: str):
-    #     """executes sql statement"""
-    #     self.cur.execute(statement)   # obvious protection against sql injection needed
+    #@TODO: security protection needed
+    async def fetch(self, query: str) -> list[Record]:
+        """executes sql query to and returns a list of Records"""
+        async with self.pool.acquire() as con:
+            return await con.fetch(query)
 
 if __name__ == "__main__":
     # with localChzzkDbConnection() as chzzk_db:
