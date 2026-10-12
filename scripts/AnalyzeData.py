@@ -15,7 +15,7 @@ from collections import defaultdict
         # open file
         # write to it
 
-def simple_plot(x, y, xlabel: str, ylabel: str, title:str):
+def simple_plot(x, y, xlabel: str = '', ylabel: str = '', title:str = ''):
     plt.plot(x, y, 'o')
     plt.title(title)
     plt.xlabel(xlabel)
@@ -41,7 +41,40 @@ def simple_bar(x, height, xlabel: str = '', ylabel: str = '', title:str = ''):
     plt.savefig(f"Graphs/{title}_bar")
     plt.clf()
 
+async def stats_per_video(db:localChzzkDbConnection):
+    """비디오별 통계 (60분 이상 되는 다시보기만)"""
+    query: str = '''
+        SELECT video_chat_count,
+            video_active_user_count,
+            ROUND(video_chat_count / (video_duration / 60), 2) AS "chats_per_minute"
+        FROM videos
+        WHERE video_chat_count <> 0 and video_duration > 60
+        ORDER BY video_active_user_count;'''
+    res: list[Record] = await db.fetch(query)
+    
+    active_user_count = []
+    chat_count = []
+    chats_per_minute = []
+
+    for record in res:
+        active_user_count.append(record['video_active_user_count'])
+        chat_count.append(record['video_chat_count'])
+        chats_per_minute.append(record['chats_per_minute'])
+    
+    # 유저수와 채팅 화력의 상관관계
+    simple_plot(active_user_count, chats_per_minute,
+                xlabel='채팅친 유저 수',
+                ylabel='채팅 화력 (분당 채팅수)',
+                title='유저수와 채팅 화력')
+    
+    # 채팅 총량과 유저수의 상관관계
+    simple_plot(chat_count, active_user_count,
+                xlabel='다시보기 채팅수',
+                ylabel='채팅친 유저수',
+                title='채팅량과 유저 수의 상관관계')
+
 async def chat_letter_count_compared(db:localChzzkDbConnection):
+    """총 글자수를 여러 문학작품의 글자수에 비교"""
     query: str = """SELECT SUM(LENGTH(chat_content)) total_letter_count FROM chats;"""
     res: list[Record] = await db.fetch(query)
     total_letter_count = res[0]['total_letter_count']
@@ -64,7 +97,8 @@ async def chat_letter_count_compared(db:localChzzkDbConnection):
         f.write(f'성경 {n_bible}권\n')
     
 
-async def general_statistics_per_streamer(db:localChzzkDbConnection):
+async def stats_per_streamer(db:localChzzkDbConnection):
+    """스트리머별 통계"""
     query: str = """
     SELECT users.user_nickname AS "streamer", res.*
     FROM (
@@ -78,6 +112,7 @@ async def general_statistics_per_streamer(db:localChzzkDbConnection):
             ROUND(AVG(video_total_donation_amount), 2) AS "average_donation_per_video",
             ROUND(AVG(video_active_user_count), 2) AS "average_chat_count_per_video"
         FROM videos
+        WHERE video_duration >= 60
         GROUP BY video_streamer_id
         ORDER BY "chats_per_minute" DESC
     ) AS res, users
@@ -92,18 +127,24 @@ async def general_statistics_per_streamer(db:localChzzkDbConnection):
     chats_per_minute: dict[int, int] = defaultdict(int)      # 500 묶음당 해당되는 스트리머의 수
     donation_per_hour: dict[int, int] = defaultdict(int)     # 5000 묶음 당 해당되는 스트리머의 수
     
+    dph_per_cpm: dict[int, int] = {}
+    
     for record in res:
         if record['total_chat_count']:
             total_chat_count += record['total_chat_count']#if record['total_chat_count'] else 0
             total_donation_amount += record['total_donation_amount']#if record['total_donation_amount'] else 0
             
+            cpm:float = record['chats_per_minute']
+            dph:float = record['donation_per_hour']
+            
+            # donnation per hour to chats per hour
+            dph_per_cpm[int(cpm)] = int(dph)
+            
             # calculate the cpm (chats_per_minute) category the streamer fits in, and then add the count of the category
-            cpm: float = record['chats_per_minute']
             cpm_category: int = int(cpm / 50)
             chats_per_minute[cpm_category] += 1
             
             # calculate the wage category the streamer fits in, and then add the count of the category
-            dph: float = record['donation_per_hour']
             dph_category: int = int(dph / 5000)
             donation_per_hour[dph_category] += 1
 
@@ -111,9 +152,9 @@ async def general_statistics_per_streamer(db:localChzzkDbConnection):
     # 채팅 화력
     # 50cpm 단위로 묶어서 바 그래프로 계산
     max_chat_category = max(chats_per_minute.keys())
-    x: list[str] = [f"{50*i}~{50*(i+1)-1}" for i in range(0, max_chat_category)]
-    y: list[int] = [chats_per_minute[i] for i in range(len(x))]
-    simple_bar(x, y,
+    x1: list[str] = [f"{50*i}~{50*(i+1)-1}" for i in range(0, max_chat_category)]
+    y1: list[int] = [chats_per_minute[i] for i in range(len(x1))]
+    simple_bar(x1, y1,
                xlabel='분당 채팅 수',
                ylabel='스트리머 수',
                title='채팅 화력 (평균 분당 채팅 수)')
@@ -121,14 +162,21 @@ async def general_statistics_per_streamer(db:localChzzkDbConnection):
     # 평균 시급
     # 5000원 단위로 묶어서 바 그래프로 계산
     max_wage_category = max(donation_per_hour.keys())
-    x: list[str] = [f"₩{5000 * i}~\n₩{5000 * (i+1) - 1}" for i in range(0, max_wage_category)]
-    y: list[int] = [donation_per_hour[i] for i in range(len(x))]
-    simple_bar(x, y, 
+    x2: list[str] = [f"₩{5000 * i}~\n₩{5000 * (i+1) - 1}" for i in range(0, max_wage_category)]
+    y2: list[int] = [donation_per_hour[i] for i in range(len(x2))]
+    simple_bar(x2, y2, 
                xlabel='시간당 도네이션',
                ylabel='스트리머 수',
                title='시급별 스트리머 수')
     
     # 채팅 화력과 평균 시급의 상관관계
+    x3 = dph_per_cpm.keys()
+    y3 = dph_per_cpm.values()
+    simple_plot(x3, y3,
+               xlabel='채팅 화력',
+               ylabel='평균 시급',
+               title='채팅 화력과 시급의 상관관계')
+    
 
     
 async def user_similarity_diagram(db:localChzzkDbConnection):
@@ -150,8 +198,9 @@ async def main():
     is_testing = False
     async with localChzzkDbConnection(is_testing) as db:
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(general_statistics_per_streamer(db))
-            tg.create_task(chat_letter_count_compared(db))
+            tg.create_task(stats_per_streamer(db))
+            tg.create_task(stats_per_video(db))
+            # tg.create_task(chat_letter_count_compared(db))
         
 
 
