@@ -41,6 +41,29 @@ def simple_bar(x, height, xlabel: str = '', ylabel: str = '', title:str = ''):
     plt.savefig(f"Graphs/{title}_bar")
     plt.clf()
 
+async def chat_letter_count_compared(db:localChzzkDbConnection):
+    query: str = """SELECT SUM(LENGTH(chat_content)) total_letter_count FROM chats;"""
+    res: list[Record] = await db.fetch(query)
+    total_letter_count = res[0]['total_letter_count']
+
+    shakespeare_letter_count   = 3_695_990
+    토지_letter_count           = 3_780_000
+    bible_letter_count         = 1_322_532
+
+    n_shakespeare_works    = total_letter_count // shakespeare_letter_count
+    n_토지                  = total_letter_count // 토지_letter_count
+    n_bible                = total_letter_count // bible_letter_count
+
+    with open('Graphs\\채팅 총량 비교.txt') as f:
+        f.write(f'총 채팅 글자수 약 {total_letter_count}자\n')
+        f.write(f'모든 셰익스피어 작품의 글자수: 약 {shakespeare_letter_count}자\n')
+        f.write(f'토지 글자수 약 {토지_letter_count}자\n')
+        f.write(f'성경 글자수 약 {bible_letter_count}자\n')
+        f.write(f'셰익스피어 전집 {n_shakespeare_works}번 만들 수 있음\n')
+        f.write(f'토지 {n_토지}권\n')
+        f.write(f'성경 {n_bible}권\n')
+    
+
 async def general_statistics_per_streamer(db:localChzzkDbConnection):
     query: str = """
     SELECT users.user_nickname AS "streamer", res.*
@@ -126,7 +149,9 @@ async def main():
     plt.rcParams['axes.unicode_minus'] = False  # keeps minus signs from rendering as boxes
     is_testing = False
     async with localChzzkDbConnection(is_testing) as db:
-        await general_statistics_per_streamer(db)
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(general_statistics_per_streamer(db))
+            tg.create_task(chat_letter_count_compared(db))
         
 
 
