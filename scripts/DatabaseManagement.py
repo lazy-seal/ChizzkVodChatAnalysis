@@ -100,10 +100,10 @@ class localChzzkDbConnection:
                 """
                 await self.pool.executemany(query, records)
             case [UserInfo(), *_]:
-                records = [(info.user_channel_id, info.user_nickname) for info in info_list]
+                records = [(info.user_channel_id, info.user_nickname, info.user_follower_count) for info in info_list]
                 query = """
-                    INSERT INTO users (user_id, user_nickname)
-                    VALUES ($1, $2)
+                    INSERT INTO users (user_id, user_nickname, followers)
+                    VALUES ($1, $2, $3)
                     ON CONFLICT (user_id) DO NOTHING
                 """
                 await self.pool.executemany(query, records)
