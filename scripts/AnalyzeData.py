@@ -15,6 +15,8 @@ from collections import defaultdict
         # open file
         # write to it
 
+streamers = {}      # streamer id to their name
+
 def simple_plot(x, y, xlabel: str = '', ylabel: str = '', title:str = ''):
     plt.plot(x, y, 'o')
     plt.title(title)
@@ -41,37 +43,105 @@ def simple_bar(x, height, xlabel: str = '', ylabel: str = '', title:str = ''):
     plt.savefig(f"Graphs/{title}_bar")
     plt.clf()
 
-async def stats_per_video(db:localChzzkDbConnection):
+async def stats_per_video(db:localChzzkDbConnection, streamer_id:str = ''):
     """비디오별 통계 (60분 이상 되는 다시보기만)"""
-    query: str = '''
-        SELECT video_chat_count,
-            video_active_user_count,
-            ROUND(video_chat_count / (video_duration / 60), 2) AS "chats_per_minute"
+    query: str = f'''
+        SELECT *,
+            ROUND(video_chat_count / (video_duration / 60), 2) AS "chats_per_minute",
+            ROUND(video_total_donation_amount / (video_duration / 360), 2) AS "donation_per_hour",
+            ROUND(video_duration / 60, 2) AS "video_duration"
         FROM videos
-        WHERE video_chat_count <> 0 and video_duration > 60
+        WHERE video_chat_count <> 0 and video_duration > 360
+        {f"AND video_streamer_id = {streamer_id}" if streamer_id else ""}
         ORDER BY video_active_user_count;'''
     res: list[Record] = await db.fetch(query)
     
     active_user_count = []
     chat_count = []
     chats_per_minute = []
+    total_donation_amount = []
+    hourly_donation = []
+    duration = []
+    streamer = []
 
     for record in res:
-        active_user_count.append(record['video_active_user_count'])
-        chat_count.append(record['video_chat_count'])
-        chats_per_minute.append(record['chats_per_minute'])
+        if record['video_chat_count'] > 10:
+            active_user_count.append(record['video_active_user_count'])
+            chat_count.append(record['video_chat_count'])
+            chats_per_minute.append(record['chats_per_minute'])
+            total_donation_amount.append(record['video_total_donation_amount'])
+            hourly_donation.append(record['donation_per_hour'])
+            duration.append(record['video_duration'])
+            streamer.append(record['video_streamer_id'])
+    
+    streamer_str: str = f"({streamers[streamer_id]}) " if streamer_id else ""
     
     # 유저수와 채팅 화력의 상관관계
     simple_plot(active_user_count, chats_per_minute,
-                xlabel='채팅친 유저 수',
+                xlabel='채팅친 유저수',
                 ylabel='채팅 화력 (분당 채팅수)',
-                title='유저수와 채팅 화력')
+                title=f'{streamer_str}다시보기별 활동 유저 수와 채팅 화력의 상관관계')
     
     # 채팅 총량과 유저수의 상관관계
     simple_plot(chat_count, active_user_count,
-                xlabel='다시보기 채팅수',
+                xlabel='총 채팅수',
                 ylabel='채팅친 유저수',
-                title='채팅량과 유저 수의 상관관계')
+                title=f'{streamer_str}다시보기별 채팅량과 활동 유저 수의 상관관계')
+
+    # 채팅 총량 vs 도네이션 양
+    simple_plot(chat_count, total_donation_amount,
+                xlabel='총 채팅수',
+                ylabel='도네이션 총량',
+                title=f'{streamer_str}다시보기별 채팅수와 도네이션 총량의 상관관계')
+    
+    # 채팅 총량 vs 도네이션 화력
+    simple_plot(chat_count, hourly_donation,
+                xlabel='총 채팅수',
+                ylabel='도네이션 화력 (시급)',
+                title=f'{streamer_str}다시보기별 채팅수와 도네이션 화력의 상관관계')
+
+    # 유저수와 도네이션 양의 상관관계
+    simple_plot(active_user_count, total_donation_amount,
+                xlabel='채팅친 유저수',
+                ylabel='다시보기 도네 합',
+                title=f'{streamer_str}다시보기별 활동 유저 수와 도네이션 총량의 상관관계')
+
+    # 유저수와 도네이션 화력의 상관관계
+    simple_plot(active_user_count, hourly_donation,
+                xlabel='채팅친 유저수',
+                ylabel='시간당 도네이션 (시급)',
+                title=f'{streamer_str}다시보기별 활동 유저 수와 시간당 도네이션의 상관관계')
+
+    # 채팅 화력과 도네이션 양의 상관관계
+    simple_plot(chats_per_minute, total_donation_amount,
+                xlabel='분당 채팅 수',
+                ylabel='도네이션 총량',
+                title=f'{streamer_str}다시보기별 채팅 화력과 도네이션 총량의 상관관계')
+
+    # 채팅 화력과 도네이션 화력의 상관관계
+    simple_plot(chats_per_minute, hourly_donation,
+                xlabel='분당 채팅 수',
+                ylabel='시간당 도네이션 (시급)',
+                title=f'{streamer_str}다시보기별 채팅 화력과 도네이션 화력의 상관관계')
+
+    # 방송 길이 vs 채팅 화력
+    simple_plot(duration, chats_per_minute,
+               xlabel='방송 길이',
+               ylabel='분당 채팅 수',
+               title=f'{streamer_str}방송 길이와 채팅 화력의 상관관계')   
+
+    # 방송 길이 vs 도네이션 양
+    simple_plot(duration, total_donation_amount,
+               xlabel='방송 길이',
+               ylabel='도네이션 총합',
+               title=f'{streamer_str}방송 시간과 채팅 화력의 상관관계')   
+
+    # 방송 길이 vs 채팅양
+    simple_plot(duration, chat_count,
+               xlabel='방송 길이',
+               ylabel='채팅수',
+               title=f'{streamer_str}방송 길이와 채팅수의 상관관계')   
+    
 
 async def chat_letter_count_compared(db:localChzzkDbConnection):
     """총 글자수를 여러 문학작품의 글자수에 비교"""
@@ -157,7 +227,7 @@ async def stats_per_streamer(db:localChzzkDbConnection):
     simple_bar(x1, y1,
                xlabel='분당 채팅 수',
                ylabel='스트리머 수',
-               title='채팅 화력 (평균 분당 채팅 수)')
+               title='평균 채팅 화력 (평균 분당 채팅 수)')
     
     # 평균 시급
     # 5000원 단위로 묶어서 바 그래프로 계산
@@ -167,7 +237,7 @@ async def stats_per_streamer(db:localChzzkDbConnection):
     simple_bar(x2, y2, 
                xlabel='시간당 도네이션',
                ylabel='스트리머 수',
-               title='시급별 스트리머 수')
+               title='평균 시급별 스트리머 수')
     
     # 채팅 화력과 평균 시급의 상관관계
     x3 = dph_per_cpm.keys()
@@ -175,7 +245,7 @@ async def stats_per_streamer(db:localChzzkDbConnection):
     simple_plot(x3, y3,
                xlabel='채팅 화력',
                ylabel='평균 시급',
-               title='채팅 화력과 시급의 상관관계')
+               title='평균 채팅 화력과 평균 시급의 상관관계')
     
 
     

@@ -10,6 +10,10 @@ LIMIT 500;
 
 SELECT count(*), chat_user_device_os as os FROM chats group by chat_user_device_os;
 
+
+SELECT SUM(LENGTH(chat_content)) total_letter_count FROM chats;
+
+
 -- timeframe block chats
 SELECT
     (chat_message_time / 60000) AS vod_timestamp,
