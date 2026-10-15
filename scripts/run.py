@@ -1,15 +1,18 @@
-from Crawler import logger, load_video_info, load_chat_and_user_data, write_vod_chats_to_csv, write_video_info_to_csv
-from DatabaseManagement import localChzzkDbConnection
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
 from pathlib import Path
 
 import csv
 import time
 from datetime import datetime
+from pprint import pprint
+
+import pandas as pd
 import asyncio
 import httpx
-from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_exponential 
+
+from Crawler import logger, load_video_info, load_chat_and_user_data, write_vod_chats_to_csv, write_video_info_to_csv
+from DatabaseManagement import localChzzkDbConnection
+from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
 
 @retry(
     stop = stop_after_attempt(5),
