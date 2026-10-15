@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS chats, videos, users CASCADE;
 CREATE TABLE users(
 	user_id TEXT PRIMARY KEY, -- Note that this is text
 	user_nickname TEXT,
-	follwer_count INTEGER
+	follwers INTEGER
 );
 
 CREATE TABLE videos(
