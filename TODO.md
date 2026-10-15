@@ -1,7 +1,5 @@
 # TODO implementation:
-- implement:
-    - db to csv, https to csv
-    - Update Testing.py 
+- 스트리머 목록 정리
 
 # TODO Ideas for Data anyalysis
 ## Doesn't need Pre-Processing
@@ -14,9 +12,6 @@
 - 가장 도네를 많이 한 유저
 - 가장 많이 사용된 이모티콘 top 10
 - 시청자층이 겹치는 스트리머들
-- 수입 부분은 아무래도 조금 민감할 수 있을 것 같아서 일부러 제외했습니다.
-    - Getting releavant information for individual videos:
-- Graph on chat frequency during the timeline of the video (chat frequency analysis)
 - Chat rate per user (within the people who actually chat)
     - The "Superfans" who chatted most in the stream
     - how many users chat in different streams
