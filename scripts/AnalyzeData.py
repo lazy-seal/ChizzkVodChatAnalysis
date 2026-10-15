@@ -15,23 +15,15 @@ from collections import defaultdict
         # open file
         # write to it
 
-streamers = {}      # streamer id to their name
+streamers: dict[str,str] = defaultdict(str)      # streamer id to their name
 
-def simple_plot(x, y, xlabel: str = '', ylabel: str = '', title:str = ''):
+def simple_plot(x, y, xlabel: str = '', ylabel: str = '', title:str = 'no_title'):
     plt.plot(x, y, 'o')
     plt.title(title)
+    plt.xlim((0, max(x)))
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.savefig(f"Graphs/{title}_plot", bbox_inches='tight')
-    plt.clf()
-
-def double_bar(x1, x2, height1, height2, width=1.5, xlabel: str = '', ylabel: str = '', title:str = ''):
-    plt.bar(x1, height1, width, color='b', edgecolor='k')
-    plt.bar(x2, height2, width, color='r', edgecolor='k')
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.savefig(f"Graphs/{title}_plot", bbox_inches='tight')
+    plt.savefig(f"Graphs\\{title}_plot")#, bbox_inches='tight')
     plt.clf()
 
 def simple_bar(x, height, xlabel: str = '', ylabel: str = '', title:str = ''):
@@ -40,7 +32,7 @@ def simple_bar(x, height, xlabel: str = '', ylabel: str = '', title:str = ''):
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.savefig(f"Graphs/{title}_bar")
+    plt.savefig(f"Graphs\\{title}_bar")
     plt.clf()
 
 async def stats_per_video(db:localChzzkDbConnection, streamer_id:str = ''):
@@ -51,7 +43,7 @@ async def stats_per_video(db:localChzzkDbConnection, streamer_id:str = ''):
             ROUND(video_total_donation_amount / (video_duration / 360), 2) AS "donation_per_hour",
             ROUND(video_duration / 60, 2) AS "video_duration"
         FROM videos
-        WHERE video_chat_count <> 0 and video_duration > 360
+        WHERE video_chat_count <> 0 and video_duration > 3600
         {f"AND video_streamer_id = {streamer_id}" if streamer_id else ""}
         ORDER BY video_active_user_count;'''
     res: list[Record] = await db.fetch(query)
@@ -63,6 +55,7 @@ async def stats_per_video(db:localChzzkDbConnection, streamer_id:str = ''):
     hourly_donation = []
     duration = []
     streamer = []
+    video_id = []
 
     for record in res:
         if record['video_chat_count'] > 10:
@@ -73,6 +66,21 @@ async def stats_per_video(db:localChzzkDbConnection, streamer_id:str = ''):
             hourly_donation.append(record['donation_per_hour'])
             duration.append(record['video_duration'])
             streamer.append(record['video_streamer_id'])
+            video_id.append(record['video_id'])
+    
+    # @WARNING/@TODO: This can be the cause of deadlock in the future
+    # save the info into csv
+    with open('Statistics\\video_stats.csv', 'w', encoding='utf-8') as f:
+        f.write('영상 id,스트리머,채팅량,채팅 화력,활동 유저수,도네량,시급,길이\n')
+        for i in range(len(video_id)):
+            f.write(f"{video_id[i]},\
+                    {streamer[i]},\
+                    {chat_count[i]},\
+                    {chats_per_minute[i]},\
+                    {active_user_count[i]},\
+                    {total_donation_amount[i]},\
+                    {hourly_donation[i]},\
+                    {duration[i]}\n")
     
     streamer_str: str = f"({streamers[streamer_id]}) " if streamer_id else ""
     
@@ -134,7 +142,7 @@ async def stats_per_video(db:localChzzkDbConnection, streamer_id:str = ''):
     simple_plot(duration, total_donation_amount,
                xlabel='방송 길이',
                ylabel='도네이션 총합',
-               title=f'{streamer_str}방송 시간과 채팅 화력의 상관관계')   
+               title=f'{streamer_str}방송 시간과 도네이션 총량의 상관관계')   
 
     # 방송 길이 vs 채팅양
     simple_plot(duration, chat_count,
@@ -157,7 +165,7 @@ async def chat_letter_count_compared(db:localChzzkDbConnection):
     n_토지                  = total_letter_count // 토지_letter_count
     n_bible                = total_letter_count // bible_letter_count
 
-    with open('Graphs\\채팅 총량 비교.txt') as f:
+    with open('Graphs\\채팅 총량 비교.txt', 'w', encoding='utf-8') as f:
         f.write(f'총 채팅 글자수 약 {total_letter_count}자\n')
         f.write(f'모든 셰익스피어 작품의 글자수: 약 {shakespeare_letter_count}자\n')
         f.write(f'토지 글자수 약 {토지_letter_count}자\n')
@@ -199,6 +207,8 @@ async def stats_per_streamer(db:localChzzkDbConnection):
     
     dph_per_cpm: dict[int, int] = {}
     
+    cpm_under_50:dict[int, int] = defaultdict(int)
+    
     for record in res:
         if record['total_chat_count']:
             total_chat_count += record['total_chat_count']#if record['total_chat_count'] else 0
@@ -211,23 +221,37 @@ async def stats_per_streamer(db:localChzzkDbConnection):
             dph_per_cpm[int(cpm)] = int(dph)
             
             # calculate the cpm (chats_per_minute) category the streamer fits in, and then add the count of the category
-            cpm_category: int = int(cpm / 50)
+            cpm_category: int = int(cpm / 25)
             chats_per_minute[cpm_category] += 1
             
             # calculate the wage category the streamer fits in, and then add the count of the category
             dph_category: int = int(dph / 5000)
             donation_per_hour[dph_category] += 1
+            
+            # 채팅 화력 분당 50 이하
+            if cpm < 51:
+                cpm_category_u50:int = int(cpm/5)
+                cpm_under_50[cpm_category_u50] += 1
 
     
     # 채팅 화력
-    # 50cpm 단위로 묶어서 바 그래프로 계산
+    # 25cpm 단위로 묶어서 바 그래프로 계산
     max_chat_category = max(chats_per_minute.keys())
-    x1: list[str] = [f"{50*i}~{50*(i+1)-1}" for i in range(0, max_chat_category)]
+    x1: list[str] = [f"{25*i}~{25*(i+1)-1}" for i in range(0, max_chat_category)]
     y1: list[int] = [chats_per_minute[i] for i in range(len(x1))]
     simple_bar(x1, y1,
                xlabel='분당 채팅 수',
                ylabel='스트리머 수',
-               title='평균 채팅 화력 (평균 분당 채팅 수)')
+               title=f'채팅 화력 ({sum(y1)}명)')
+    
+    # 채팅 화력 (분당 50개 이하인 사람들만 따로 모아서 계산)
+    max_chat_category_u50 = max(cpm_under_50.keys())
+    x1_u50: list[str] = [f"{5*i}~{5*(i+1)-1}" for i in range(0, max_chat_category_u50)]
+    y1_u50: list[int] = [cpm_under_50[i] for i in range(len(x1_u50))]
+    simple_bar(x1_u50, y1_u50,
+               xlabel='분당 채팅 수',
+               ylabel='스트리머 수',
+               title=f'채팅 화력 50 이하 ({sum(y1_u50)}명)')
     
     # 평균 시급
     # 5000원 단위로 묶어서 바 그래프로 계산
