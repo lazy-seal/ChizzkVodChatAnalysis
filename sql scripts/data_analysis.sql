@@ -2,6 +2,9 @@ SELECT * FROM users;
 SELECT * FROM chats;
 SELECT * FROM videos;
 
+show max_connections;
+
+
 SELECT AVG(video_chat_count) FROM videos;
 
 SELECT DISTINCT chat_emojis FROM chats 
@@ -55,13 +58,19 @@ ORDER BY user_count DESC;
             SUM(video_total_donation_amount) AS "total_donation", 
             ROUND(SUM(video_total_donation_amount) / (SUM(video_duration) / 360), 2) AS "donation_per_hours",
             ROUND(AVG(video_total_donation_amount), 2) AS "average_donation_per_video",
-            ROUND(AVG(video_active_user_count), 2) AS "average_chat_count_per_video"
+            ROUND(AVG(video_active_user_count), 2) AS "average_user_count_per_video"
         FROM videos
         GROUP BY video_streamer_id
         ORDER BY "chats_per_minute" DESC
     ) AS res, users
     WHERE res.video_streamer_id = users.user_id;
 
+SELECT video_chat_count,
+	video_active_user_count,
+	ROUND(video_chat_count / (video_duration / 60), 2) AS "chats_per_minute"
+FROM videos
+WHERE video_chat_count <> 0 and video_duration >= 60
+ORDER BY video_active_user_count;
 
 -- 스트리머별 자주 쓰이는 이모티콘
 SELECT 

@@ -1,15 +1,19 @@
 import json
 import csv
+import asyncio
+import logging
+import time
+from pathlib import Path
+
 from pprint import pprint
 import pandas as pd
 import httpx
-import asyncio
-from pathlib import Path
-from Crawler import load_user_info, logger
-from InfoDataObjects import UserInfo
-import time
 from functools import wraps
 from typing import Any, Callable
+
+
+logging.getLogger(__name__)
+
 
 def drop_csv_column(path:str | Path, column_name: str):
     df = pd.read_csv(path, encoding="utf-8")
@@ -28,14 +32,6 @@ def print_data_structure(data, indent=0):
         print("  " * (indent + 1) + f"[list]")
         if len(data) > 0:
             print_data_structure(data[0], indent + 2)
-
-async def example():
-    async with httpx.AsyncClient() as client:
-        uinfo = await load_user_info(client, "b2fcc309d14c98ee241be56a488eac32")
-        if uinfo:
-            pprint(uinfo.get_dict())
-        else:
-            print("user not available")
 
 def print_func_when_called(show_args=False):
     """
@@ -57,5 +53,4 @@ def print_func_when_called(show_args=False):
 if __name__ == "__main__":
     start = time.time()
     # asyncio.run(add_users_from_chat())
-    asyncio.run(example())
     print(time.time() - start)

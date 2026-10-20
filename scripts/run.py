@@ -2,17 +2,27 @@ from pathlib import Path
 
 import csv
 import time
+import logging
 from datetime import datetime
 from pprint import pprint
 
 import pandas as pd
 import asyncio
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential 
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-from Crawler import logger, load_video_info, load_chat_and_user_data, write_vod_chats_to_csv, write_video_info_to_csv
-from DatabaseManagement import localChzzkDbConnection
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo
+from scripts import (
+    localChzzkDbConnection, 
+    VideoInfo, 
+    UserInfo,
+    load_chat_and_user_data,
+    load_video_info,
+    setup_logging
+)
+
+
+logger = logging.getLogger(__name__)
+
 
 @retry(
     stop = stop_after_attempt(5),
@@ -62,10 +72,10 @@ async def get_video_lists(client: httpx.AsyncClient, path: Path, start_date: dat
 
 async def main():
     all_videos_per_streamer : list[list[VideoInfo]] = []    # list of streamers' list of videos: Each sublist is list of VideoInfo from the same streamer 
-    is_testing = False
-    streamers_csv = Path("Raw Data\\all_verified_streamers.csv")
-    start_date              = datetime(2026, 3, 1)
-    end_date                = datetime(2026, 3, 31)
+    is_testing = True
+    streamers_csv = Path("Raw Data\\streamers.csv")
+    start_date              = datetime(2026, 10, 1)
+    end_date                = datetime(2026, 10, 31)
      
     async with localChzzkDbConnection(is_testing) as chzzkdb:
         async with httpx.AsyncClient() as client:
@@ -90,6 +100,11 @@ async def main():
                         if await chzzkdb.exists_in_db(video_info) and await chzzkdb.insert_info([video_info]):
                             video_number = video_info.video_number
                             tg.create_task(fetch_and_save_chats_to_db(chzzkdb, client, video_number))
+                        
+                        if is_testing: # only get a single video if testing
+                            break
+                if is_testing and streamer_videos:
+                    break
             
         # Create new taskgroup to make sure all relevant data for video are inserted
         async with asyncio.TaskGroup() as tg:
@@ -98,10 +113,11 @@ async def main():
                     tg.create_task(chzzkdb.insert_statistics_for_vod(video_info.video_number))
     
 if __name__ == "__main__":
-    start_date              = datetime(2026, 3, 1)
-    end_date                = datetime(2026, 3, 31)
+    setup_logging()
+
     st = time.time()
-    # asyncio.run(main())
+    asyncio.run(main())
     elapsed = time.time() - st
+
     print(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")
     logger.info(f"Total Execution Time: {int(elapsed // 60)}m {int(elapsed % 60)}s")

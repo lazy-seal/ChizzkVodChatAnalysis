@@ -1,25 +1,27 @@
 import json
-import ast
 import csv
-from pathlib import Path
 import logging
-from pprint import pprint
-import httpx
 import asyncio
-import pandas as pd
-from datetime import date, timedelta, datetime
-from InfoDataObjects import VideoInfo, ChatInfo, UserInfo, StreamerInfo 
 import time
+from pathlib import Path
+from datetime import date, timedelta, datetime
+from pprint import pprint
 
+import httpx
+import pandas as pd
+
+from scripts import (
+    VideoInfo, 
+    ChatInfo, 
+    UserInfo,
+)
+
+logger = logging.getLogger(__name__)
 
 with open("Private//private.json", encoding="utf-8") as f:
         private_file = json.load(f)
         HEADERS = {"User-Agent": "Mozilla/5.0",
                    "Client-ID": private_file['Client-ID']}
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='Crawler.log', encoding='utf-8', level=logging.INFO)
-logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 async def download_emoji(client: httpx.AsyncClient, emoji: dict) -> None:

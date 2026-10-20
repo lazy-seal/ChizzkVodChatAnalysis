@@ -1,16 +1,22 @@
 # import psycopg2
-from pprint import pprint
+import json
+import asyncio
+import logging
+from pathlib import Path
+from collections.abc import Iterable
+
 import asyncpg
 from asyncpg import Record
-import datetime
-import json
-from pathlib import Path
-from Helpers import print_func_when_called
-from InfoDataObjects import UserInfo, ChatInfo, VideoInfo
-from Crawler import logger
-from collections.abc import Iterable
-import asyncio
+from pprint import pprint
 
+from scripts import (
+    VideoInfo, 
+    ChatInfo, 
+    UserInfo,
+    print_func_when_called,
+)
+
+logger = logging.getLogger(__name__)
 
 class localChzzkDbConnection:
     """Context Manager for Database Connection"""
@@ -32,15 +38,14 @@ class localChzzkDbConnection:
                                      password=dbpassword, 
                                      port=5432,
                                      ssl=False,
-                                     min_size=10,
-                                     max_size=100)
+                                     min_size=1,
+                                     max_size=10)
 
         return self
     
     @print_func_when_called()
     async def __aexit__(self, exc_type, exc_value, exc_traceback):
-        """Commits (iff not testing) and closes connection and cursor"""
-        # if not self.is_testing:
+        """Commits and closes connection and cursor"""
         if  self.pool:
             print('start closing connections')
             await asyncio.wait_for(self.pool.close(), timeout=5.0)
