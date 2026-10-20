@@ -289,7 +289,7 @@ async def user_similarity_diagram(db:localChzzkDbConnection):
 async def main():
     plt.rcParams['font.family'] = 'Malgun Gothic'
     plt.rcParams['axes.unicode_minus'] = False  # keeps minus signs from rendering as boxes
-    is_testing = False
+    is_testing = True
     async with localChzzkDbConnection(is_testing) as db:
         async with asyncio.TaskGroup() as tg:
             tg.create_task(stats_per_streamer(db))

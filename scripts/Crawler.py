@@ -22,6 +22,40 @@ with open("Private//private.json", encoding="utf-8") as f:
         private_file = json.load(f)
         HEADERS = {"User-Agent": "Mozilla/5.0",
                    "Client-ID": private_file['Client-ID']}
+        
+async def save_all_partner_streamers(client:httpx.AsyncClient) -> None:
+    """Loads all partner streamers via api call and save then into a csv file"""
+    streamers: dict[str, str] = {}      # id to channelNickname
+    filepath = Path("Raw Data\\partner_streamers.csv")
+    
+    url = f"api.chzzk.naver.com/service/v1/streamer-partners"
+    last_streamer = ''
+
+    params = {"originalNickname": last_streamer}
+    res = await client.get(url, params=params, headers=HEADERS)
+    content = res.json()['content']
+    
+    while content['size'] > 0:
+        last_streamer = content['page']['next']['originalNickname']
+        
+        for streamer in content['data']:
+            cid = streamer['channelId']
+            cname = streamer['channelName']
+            streamers[cid] = cname
+
+        params = {"originalNickname": last_streamer}
+        res = await client.get(url, params=params, headers=HEADERS)
+        content = res.json()['content']
+        
+    # consider fully loading other user info?
+    # await load_user_info(client, ...)
+    
+    with open(filepath, 'w', newline="", encoding="utf-8") as f:
+        csv_writer = csv.DictWriter(f, fieldnames=streamers.keys())
+        csv_writer.writeheader()
+        csv_writer.writerow(streamers)
+
+        
 
 
 async def download_emoji(client: httpx.AsyncClient, emoji: dict) -> None:
